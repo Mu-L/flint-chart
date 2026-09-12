@@ -11,7 +11,6 @@ export interface ComposedInteractiveOptions {
     readonly updates: readonly ChartUpdate[];
     readonly assistedTargeting: BuildInteractiveChartOptions['assistedTargeting'];
     readonly keyboardTargeting: boolean | undefined;
-    readonly dismiss: BuildInteractiveChartOptions['dismiss'];
     /** Warnings known before the mount, such as a spec a static backend ignores. */
     readonly warnings: readonly ChartWarning[];
 }
@@ -19,7 +18,7 @@ export interface ComposedInteractiveOptions {
 type ComposeInput = Pick<ChartAssemblyInput, 'interaction_spec'>;
 type ComposeOptions = Pick<
     BuildInteractiveChartOptions,
-    'backend' | 'interactions' | 'updates' | 'assistedTargeting' | 'keyboardTargeting' | 'dismiss'
+    'backend' | 'interactions' | 'updates' | 'assistedTargeting' | 'keyboardTargeting'
 >;
 
 /**
@@ -27,10 +26,10 @@ type ComposeOptions = Pick<
  *
  * The spec's interactions come first. A code definition cannot replace a spec
  * entry by reusing its id; the collision is an error that names both sources.
- * The three surface policies come from the code when it sets them, `false`
- * included, and from the spec otherwise. A backend that runs no interactions
- * ignores the spec with one `info` warning, unless the code also asked for
- * interactions, in which case the mount still fails as it does today.
+ * The targeting policies come from the code when it sets them and from the
+ * spec otherwise. A backend that runs no interactions ignores the spec with
+ * one `info` warning, unless the code also asked for interactions, in which
+ * case the mount fails.
  */
 export function composeInteractiveOptions(input: ComposeInput, options: ComposeOptions): ComposedInteractiveOptions {
     const resolved = resolveInteractionSpec(input.interaction_spec);
@@ -57,7 +56,6 @@ export function composeInteractiveOptions(input: ComposeInput, options: ComposeO
         updates: options.updates ?? [],
         assistedTargeting: options.assistedTargeting ?? resolved.surface.assistedTargeting,
         keyboardTargeting: options.keyboardTargeting ?? resolved.surface.keyboardTargeting,
-        dismiss: options.dismiss ?? resolved.surface.dismiss,
         warnings,
     };
 }

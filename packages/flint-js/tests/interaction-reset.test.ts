@@ -3,7 +3,7 @@ import { INTERACTION_RESET_GESTURES, normalizeResetGestures, SELECTION_RESET } f
 import { INTERACTION_PRESET_TYPES } from '../src/core/interaction-spec';
 import { INTERACTION_PRESETS } from '../src/interactive/spec/registry';
 import { resolveInteractionSpec } from '../src/interactive/spec/resolve';
-import { clickHighlight, hoverGroupFocus, legendToggle, navigate, type CanvasInteractionDef } from '../src/interactive/interactions';
+import { clickHighlight, hoverGroupFocus, legendToggle, navigate } from '../src/interactive/interactions';
 import type { InteractionEntry } from '../src/core/interaction-spec';
 
 const REQUIRED: Partial<Record<string, Record<string, unknown>>> = {
@@ -73,35 +73,6 @@ describe('reset in a spec', () => {
             .toThrow(/\(brush-x\): reset gesture "click-any" is unknown\. Gestures: click-none, double-click, escape/);
         expect(() => resolveInteractionSpec({ interactions: [{ type: 'brush-x', options: { reset: 'escape' } }] }))
             .toThrow(/\(brush-x\): "reset" must be a list of gestures/);
-    });
-});
-
-describe('the deprecated dismiss option', () => {
-    it('maps onto one list', async () => {
-        const { resetGesturesFromDismiss } = await import('../src/interactive/reset-compat');
-        expect(resetGesturesFromDismiss(undefined)).toBeUndefined();
-        expect(resetGesturesFromDismiss(false)).toEqual([]);
-        expect(resetGesturesFromDismiss({})).toEqual(['click-none', 'escape']);
-        expect(resetGesturesFromDismiss({ click: 'any' })).toEqual(['click-none', 'escape']);
-        expect(resetGesturesFromDismiss({ click: 'plot-background', escape: false })).toEqual(['click-none']);
-        expect(resetGesturesFromDismiss({ click: false, escape: true })).toEqual(['escape']);
-    });
-
-    it('overrides the interactions that reset by default and leaves settings and viewports alone', async () => {
-        const { applyDismissDefaults } = await import('../src/interactive/reset-compat');
-        const { brushZoom, externalInteraction } = await import('../src/interactive/interactions');
-        const external = externalInteraction({ id: 'host', handle: () => null });
-        const [highlight, toggle, viewport, zoom, host] = applyDismissDefaults(
-            [clickHighlight(), legendToggle(), navigate(), brushZoom(), external],
-            false,
-        ) as (CanvasInteractionDef | typeof external)[];
-        expect((highlight as CanvasInteractionDef).reset).toEqual([]);
-        expect((toggle as CanvasInteractionDef).reset).toEqual([]);
-        expect((viewport as CanvasInteractionDef).reset).toEqual(['double-click']);
-        expect((zoom as CanvasInteractionDef).reset).toEqual(['double-click', 'escape']);
-        expect(host).toBe(external);
-        const [again] = applyDismissDefaults([clickHighlight()], { click: 'any', escape: false }) as CanvasInteractionDef[];
-        expect(again.reset).toEqual(['click-none']);
     });
 });
 

@@ -67,24 +67,16 @@ export interface AssistedTargetingOptions extends TargetFeedbackOptions {
     maxDistance?: number;
 }
 
-/** How committed presentation and annotation state is cleared. */
-export interface InteractionDismissPolicy {
-    click?: 'any' | 'non-element' | 'plot-background' | false;
-    escape?: boolean;
-}
-
 /**
  * How a chart behaves. Sits beside `chart_spec` and `theme_spec` in
  * `ChartAssemblyInput`. Only the Vega-Lite interactive surface reads it; the
  * assemblers and the static backends leave it untouched. Retained state is not
- * part of it: a host applies that through the surface (`applyUpdate`,
- * `setUpdates`, `dispatch`), because state arrives from outside the chart.
+ * part of it; a host applies that through the surface.
  */
 export interface InteractionSpec {
-    /** One entry per interaction. Its type names the preset that makes it; no string shorthand. */
+    /** One entry per interaction. Its type names the preset that makes it, and its options carry its own `reset` list. */
     interactions: readonly InteractionEntry[];
     /** Presets assist by default; false requires direct hits, maxDistance overrides eligible presets. */
     assistedTargeting?: boolean | AssistedTargetingOptions;
     keyboardTargeting?: boolean;
-    dismiss?: InteractionDismissPolicy | false;
 }

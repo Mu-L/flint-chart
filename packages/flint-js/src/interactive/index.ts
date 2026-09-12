@@ -15,7 +15,6 @@ export type {
     InteractiveBackend,
     InteractiveChartSurface,
     InteractiveChartSurfaceOptions,
-    InteractionDismissPolicy,
     InteractiveRenderer,
     InteractiveRendererAdapter,
     ViewportChannel,
@@ -153,7 +152,6 @@ export type {
 } from './spec/registry';
 export { resolveInteractionSpec } from './spec/resolve';
 export { INTERACTION_RESET_GESTURES, interactionsToReset, normalizeResetGestures } from './reset';
-export { applyDismissDefaults, resetGesturesFromDismiss } from './reset-compat';
 export type { InteractionResetGesture } from './reset';
 export { admitInteractions } from './spec/admission';
 export { composeInteractiveOptions } from './spec/compose';
@@ -168,7 +166,7 @@ export function buildInteractiveChart(
 ): InteractiveChartSurface {
     const { backend, renderer, expressionInterpreter, background, className, ariaLabel, chartId } = options;
     // The spec and the code are two sources of one configuration; the spec comes first.
-    const { interactions, updates, assistedTargeting, keyboardTargeting, dismiss, warnings } =
+    const { interactions, updates, assistedTargeting, keyboardTargeting, warnings } =
         composeInteractiveOptions(input, options);
     const canvasInteractions = interactions.filter(isCanvasInteraction);
     const hoverTolerance = Math.max(0, ...canvasInteractions
@@ -212,7 +210,6 @@ export function buildInteractiveChart(
                                 keyboard: keyboardTargeting ? {} : false,
                             },
                             keyboardTargeting,
-                            dismiss,
                         }).mount(chartContainer, chartInput);
                     },
                 },

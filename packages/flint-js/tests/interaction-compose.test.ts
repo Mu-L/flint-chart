@@ -5,7 +5,6 @@ import type { InteractionSpec } from '../src/core/interaction-spec';
 
 const SPEC: InteractionSpec = {
     interactions: [{ type: 'legend-toggle' }, { type: 'navigate', options: { axes: 'x' } }],
-    dismiss: { escape: false },
     keyboardTargeting: true,
 };
 const ids = (composed: { interactions: readonly { id: string }[] }): string[] =>
@@ -14,11 +13,10 @@ const ids = (composed: { interactions: readonly { id: string }[] }): string[] =>
 describe('composeInteractiveOptions', () => {
     it('leaves a spec-less chart exactly as the code configured it', () => {
         const composed = composeInteractiveOptions({}, {
-            backend: 'vegalite', interactions: [clickHighlight()], updates: [], dismiss: false,
+            backend: 'vegalite', interactions: [clickHighlight()], updates: [],
         });
         expect(ids(composed)).toEqual(['click-highlight']);
         expect(composed.updates).toEqual([]);
-        expect(composed.dismiss).toBe(false);
         expect(composed.keyboardTargeting).toBeUndefined();
         expect(composed.warnings).toEqual([]);
     });
@@ -46,15 +44,13 @@ describe('composeInteractiveOptions', () => {
         })).toThrow(/Duplicate interaction id: "select"/);
     });
 
-    it('lets the code win on the surface policies, false included', () => {
+    it('lets the code win on the targeting policies', () => {
         const fromSpec = composeInteractiveOptions({ interaction_spec: SPEC }, { backend: 'vegalite' });
-        expect(fromSpec.dismiss).toEqual({ escape: false });
         expect(fromSpec.keyboardTargeting).toBe(true);
         expect(fromSpec.assistedTargeting).toBeUndefined();
         const fromCode = composeInteractiveOptions({ interaction_spec: SPEC }, {
-            backend: 'vegalite', dismiss: false, keyboardTargeting: false, assistedTargeting: { maxDistance: 4 },
+            backend: 'vegalite', keyboardTargeting: false, assistedTargeting: { maxDistance: 4 },
         });
-        expect(fromCode.dismiss).toBe(false);
         expect(fromCode.keyboardTargeting).toBe(false);
         expect(fromCode.assistedTargeting).toEqual({ maxDistance: 4 });
     });

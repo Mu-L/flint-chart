@@ -137,9 +137,18 @@ describe('resolveInteractionSpec', () => {
             .toThrow(/interactions\[1\] \(brush-y\): duplicate id "same"/);
     });
 
-    it('passes the surface policies through unchanged', () => {
-        const spec: InteractionSpec = { interactions: [], dismiss: { escape: true }, keyboardTargeting: true };
-        expect(resolveInteractionSpec(spec).surface).toEqual({ dismiss: { escape: true }, keyboardTargeting: true });
+    it('passes the targeting policies through unchanged', () => {
+        const spec: InteractionSpec = { interactions: [], keyboardTargeting: true, assistedTargeting: { maxDistance: 4 } };
+        expect(resolveInteractionSpec(spec).surface).toEqual({ keyboardTargeting: true, assistedTargeting: { maxDistance: 4 } });
+    });
+
+    it('rejects a key that left the spec, with a hint', () => {
+        expect(() => resolveInteractionSpec({ interactions: [], dismiss: false } as never))
+            .toThrow('interaction_spec: unknown key "dismiss"; put a "reset" list on each interaction instead.');
+        expect(() => resolveInteractionSpec({ interactions: [], updates: [] } as never))
+            .toThrow(/unknown key "updates"; state arrives through the surface/);
+        expect(() => resolveInteractionSpec({ interactions: [], presets: [] } as never))
+            .toThrow('interaction_spec: unknown key "presets".');
     });
 
     it('has no place for retained state', () => {

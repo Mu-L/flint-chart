@@ -110,7 +110,7 @@ Already serialisable:
 
 - every preset option except one (`id`, `dimOpacity`, `targets`, `axes`, `mode`, `match`, `guide.style`, `tolerance`, `groupBy`, `domainGuard`, `reset`, `show`, `seriesBy`, `selector`, ...);
 - `ChartUpdate` and all seven ops, including `SemanticTargetSelector` (`{ select: { key: { Country: 'Japan' } } }`);
-- the surface policies on `BuildInteractiveChartOptions`: `dismiss`, `assistedTargeting`, `keyboardTargeting`.
+- the targeting policies on `BuildInteractiveChartOptions`: `assistedTargeting`, `keyboardTargeting`.
 
 Not serialisable:
 
@@ -178,7 +178,7 @@ Why top level and not inside `chart_spec`:
 
 - It follows the existing triad. `theme_spec` sits beside `chart_spec` "because the same theme applies to every chart" (`core/types.ts`). Behaviour is the same kind of orthogonal concern: `navigate` applies to any chart with a continuous axis, and a static renderer ignores it entirely.
 - Static backends (ECharts, Chart.js, Plotly, Excel, Image-Charts, flint-py) can ignore one top-level key with an `info` warning, exactly as they ignore `theme_spec` today.
-- The object has room for the surface policies (`dismiss`, `assistedTargeting`, `keyboardTargeting`), which do not belong in `chart_spec`.
+- The object has room for the targeting policies (`assistedTargeting`, `keyboardTargeting`), which do not belong in `chart_spec`.
 
 The name follows the `snake_case` convention of the other top-level keys.
 
@@ -232,7 +232,6 @@ export interface InteractionSpec {
     interactions: readonly InteractionPresetSpec[];
     assistedTargeting?: boolean | AssistedTargetingOptions;
     keyboardTargeting?: boolean;
-    dismiss?: InteractionDismissPolicy | false;
 }
 ```
 
@@ -257,8 +256,7 @@ Example:
       { "type": "click-highlight", "options": { "dimOpacity": 0.2, "targets": ["mark", "legend"] } },
       { "type": "inspect-index", "options": { "axis": "x", "seriesBy": "Country", "show": "all" } },
       { "type": "navigate", "options": { "axes": "x", "pan": false, "reset": ["double-click"] } }
-    ],
-    "dismiss": { "escape": true, "click": "plot-background" }
+    ]
   }
 }
 ```
@@ -303,7 +301,7 @@ export function listInteractionPresets(): Pick<InteractionEntry, 'type' | 'label
 // resolve.ts
 export function resolveInteractionSpec(spec: InteractionSpec | undefined): {
     interactions: InteractionDef[];
-    surface: Pick<InteractiveChartSurfaceOptions, 'assistedTargeting' | 'keyboardTargeting' | 'dismiss'>;
+    surface: Pick<InteractiveChartSurfaceOptions, 'assistedTargeting' | 'keyboardTargeting'>;
 };
 ```
 
@@ -387,7 +385,7 @@ Phase 1.
 
 | Option | Why not |
 | --- | --- |
-| `chart_spec.interactions: [...]` | No home for `dismiss`, `assistedTargeting`; couples behaviour to the "what to draw" object that static backends must read. |
+| `chart_spec.interactions: [...]` | No home for `assistedTargeting`, `keyboardTargeting`; couples behaviour to the "what to draw" object that static backends must read. |
 | `chart_spec.chartProperties.interactions` | `chartProperties` is per-template and validated against `ChartTemplateDef.properties`; presets are cross-template. |
 | Vega-Lite `params` style (`{ name, select: { type: 'interval' } }`) | Flint's presets are higher level (they carry policy, not just selection). Exposing Vega selections would leak the backend. |
 | Serialise handlers as expression strings | A new language to specify, secure, and document. Presets already cover the shared cases; code covers the rest. |
@@ -434,7 +432,8 @@ Phase 1.
 | Brush naming | three types: `brush-x`, `brush-y`, `brush-angle` |
 | Unsupported preset for the chart type | `warning`, entry dropped; the chart still renders |
 | Same id in spec and code | error, as `normalizeInteractions()` does today |
-| Scope of v1 | `interactions`, `dismiss`, `assistedTargeting`, `keyboardTargeting` |
+| Scope of v1 | `interactions`, `assistedTargeting`, `keyboardTargeting` |
+| `dismiss` | removed from the spec and from the code options (2026-09-12); each interaction owns a `reset` list (§10) |
 | Retained state (`updates`) | not in `interaction_spec` (removed 2026-09-11): state arrives from outside the chart, through `applyUpdate`, `setUpdates`, `dispatch`, or `options.updates`. A JSON home for seeded state, if needed, is a separate top-level field. |
 
 ## 8. Risks
@@ -523,9 +522,12 @@ A chart that mounts `double-activate` together with an entry whose `reset` lists
 
 ### Spec and code surface
 
-`dismiss` leaves `InteractionSpec` and `composeInteractiveOptions()`. `options.dismiss`
-stays one release as a deprecated default for interactions with no explicit `reset`:
-`click` of any value maps to `click-none`, `escape` to `escape`, and `false` to `[]`.
+`dismiss` leaves `InteractionSpec`, `composeInteractiveOptions()`, and every code option
+(`buildInteractiveChart`, the surface, the Vega renderer), together with the
+`InteractionDismissPolicy` type. The resolver rejects a spec that still carries the key and
+points at `reset`. The two callers in the repo needed nothing in its place: the Test cases lab
+used the values the presets default to, and the you-draw-it demo mounts a hand-built definition
+with no `reset` list and host updates, which no gesture resets.
 
 Step 2 landed 2026-09-12: one reset dispatcher in the Vega runtime replaces `dismissPolicy`.
 A click that hits nothing, a double-click, or Escape resets only the interactions whose list
@@ -535,3 +537,6 @@ through the gesture's `reset()`. A chart with an `escape` reset becomes focusabl
 focus on a pointer press, so Escape reaches the chart the reader touched last and no other.
 `double-activate` next to a `double-click` reset is an admission conflict. `options.dismiss`
 survives as a deprecated code option that maps onto every interaction that resets by default.
+
+Step 3 landed 2026-09-12: `dismiss` is gone from the spec and from the code options; the deprecated
+mapping was removed rather than kept, because no caller needed it.

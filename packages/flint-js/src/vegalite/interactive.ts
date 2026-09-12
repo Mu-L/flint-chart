@@ -1,8 +1,7 @@
 import { applyCategoryViewports } from '../core/filter-overflow';
 import type { CategoryViewport, ChartAssemblyInput } from '../core/types';
 import { isCanvasInteraction, type InteractionDef } from '../interactive/interactions';
-import { applyDismissDefaults } from '../interactive/reset-compat';
-import type { InteractionDismissPolicy, InteractiveRendererAdapter, TargetFeedbackOptions, ViewportState } from '../interactive/types';
+import type { InteractiveRendererAdapter, TargetFeedbackOptions, ViewportState } from '../interactive/types';
 import { assembleVegaLite } from './assemble';
 import {
     addVegaLiteInteractions,
@@ -31,8 +30,6 @@ export interface VegaInteractiveRendererOptions {
     hoverTolerance?: number;
     keyboardTargeting?: boolean;
     targetFeedback?: { assisted: TargetFeedbackOptions | false; keyboard: TargetFeedbackOptions | false };
-    /** Deprecated: maps onto the `reset` list of every interaction that resets by default. */
-    dismiss?: InteractionDismissPolicy | false;
 }
 
 function windowedInput(
@@ -75,8 +72,7 @@ export function createVegaInteractiveRenderer(
             const firstInput = windowedInput(interactiveInput, viewports, {});
             const vlSpec = assembleVegaLite(firstInput) as any;
             applyViewportSorts(vlSpec, viewports);
-            // The deprecated global policy becomes each defaulting interaction's own reset list.
-            const interactions = applyDismissDefaults(options.interactions ?? [], options.dismiss);
+            const interactions = options.interactions ?? [];
             const canvasInteractions = interactions.filter(isCanvasInteraction);
             const interactionPlan = addVegaLiteInteractions(
                 vlSpec,

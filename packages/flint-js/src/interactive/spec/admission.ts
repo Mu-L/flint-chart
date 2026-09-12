@@ -35,12 +35,10 @@ const DROPPED = 'The interaction was dropped.';
 /**
  * Decide which interactions a compiled chart can honour.
  *
- * The checks are the ones the Vega-Lite compile step used to make inline. They
- * now answer differently by origin: a definition made in code throws, as it
- * always did, because a developer sees the exception; an entry that came from
- * `interaction_spec` is dropped and reported as a `ChartWarning`, because an
- * agent reads warnings and the chart should still render. When two entries
- * conflict, the one later in the list yields.
+ * The answer depends on origin. A definition made in code throws, because a
+ * developer sees the exception. An entry from `interaction_spec` is dropped and
+ * reported as a `ChartWarning`, because an agent reads warnings and the chart
+ * should still render. When two entries conflict, the one later in the list yields.
  */
 export function admitInteractions(
     plan: InteractionAdmissionPlan,
@@ -86,8 +84,7 @@ export function admitInteractions(
         return true;
     });
 
-    // A chart navigates through one interaction. A later spec entry yields; code keeps today's
-    // behaviour, where the first definition wins.
+    // A chart navigates through one interaction. A later spec entry yields; in code the first wins.
     let navigation: CanvasInteractionDef | undefined;
     admitted = admitted.filter((interaction) => {
         if (interaction.eventSource.type !== 'navigation') return true;
@@ -124,8 +121,8 @@ export function admitInteractions(
         admitted = admitted.filter((interaction) => interaction !== victim);
     }
 
-    // A double-click cannot both activate a mark and reset another interaction. Code keeps
-    // today's behaviour, where both fire; a spec entry yields, the later one first.
+    // A double-click cannot both activate a mark and reset another interaction. Code definitions
+    // both fire; a spec entry yields, the later one first.
     for (;;) {
         const activate = admitted.find((interaction) => interaction.eventSource.gesture === 'double');
         const reset = admitted.find((interaction) =>

@@ -1,11 +1,10 @@
 import type { CategoryViewport, ChartAssemblyInput, ChartWarning } from '../core/types';
 import type { InteractionContext, InteractionDef } from './interactions';
 import type { ChartUpdate, ChartUpdateResult } from './language/updates';
-import type { AssistedTargetingOptions, InteractionDismissPolicy } from '../core/interaction-spec';
+import type { AssistedTargetingOptions } from '../core/interaction-spec';
 
 export type {
     AssistedTargetingOptions,
-    InteractionDismissPolicy,
     TargetDetailsOptions,
     TargetFeedbackOptions,
 } from '../core/interaction-spec';
@@ -59,8 +58,6 @@ export interface InteractiveChartSurfaceOptions {
     /** Presets assist by default; false disables it and maxDistance overrides eligible presets. */
     assistedTargeting?: boolean | AssistedTargetingOptions;
     keyboardTargeting?: boolean;
-    /** How committed presentation and annotation state is cleared. */
-    dismiss?: InteractionDismissPolicy | false;
     /** Warnings known before the mount; the surface reports them with the mount's own. */
     warnings?: readonly ChartWarning[];
 }

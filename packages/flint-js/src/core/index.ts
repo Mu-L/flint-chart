@@ -207,7 +207,6 @@ export {
     type AssistedTargetingOptions,
     type TargetDetailsOptions,
     type TargetFeedbackOptions,
-    type InteractionDismissPolicy,
 } from './interaction-spec';
 
 // ThemeSpec: public visual-system vocabulary and chart-specific grounding

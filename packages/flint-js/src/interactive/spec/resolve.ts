@@ -11,13 +11,19 @@ import { INTERACTION_RESET_GESTURES, isResetGesture } from '../reset';
 export interface ResolvedInteractionSpec {
     /** Canvas definitions in spec order, each tagged `origin: 'spec'`. */
     readonly interactions: readonly CanvasInteractionDef[];
-    readonly surface: Pick<InteractionSpec, 'assistedTargeting' | 'keyboardTargeting' | 'dismiss'>;
+    readonly surface: Pick<InteractionSpec, 'assistedTargeting' | 'keyboardTargeting'>;
 }
 
 const EMPTY: ResolvedInteractionSpec = Object.freeze({
     interactions: Object.freeze([]) as readonly CanvasInteractionDef[],
     surface: Object.freeze({}),
 });
+
+const KNOWN_KEYS = new Set(['interactions', 'assistedTargeting', 'keyboardTargeting']);
+const RETIRED_KEYS: Record<string, string> = {
+    dismiss: 'put a "reset" list on each interaction instead',
+    updates: 'state arrives through the surface (applyUpdate, setUpdates, dispatch), not the spec',
+};
 
 function isPresetType(value: unknown): value is InteractionPresetType {
     return typeof value === 'string' && (INTERACTION_PRESET_TYPES as readonly string[]).includes(value);
@@ -38,6 +44,11 @@ function entryLabel(index: number, type?: unknown): string {
  */
 export function resolveInteractionSpec(spec: InteractionSpec | undefined): ResolvedInteractionSpec {
     if (!spec) return EMPTY;
+    for (const key of Object.keys(spec)) {
+        if (KNOWN_KEYS.has(key)) continue;
+        const hint = RETIRED_KEYS[key];
+        throw new Error(`interaction_spec: unknown key "${key}"${hint ? `; ${hint}` : ''}.`);
+    }
     if (!Array.isArray(spec.interactions)) {
         throw new Error('interaction_spec.interactions must be an array of preset entries.');
     }
@@ -116,7 +127,6 @@ export function resolveInteractionSpec(spec: InteractionSpec | undefined): Resol
         surface: {
             ...(spec.assistedTargeting !== undefined ? { assistedTargeting: spec.assistedTargeting } : {}),
             ...(spec.keyboardTargeting !== undefined ? { keyboardTargeting: spec.keyboardTargeting } : {}),
-            ...(spec.dismiss !== undefined ? { dismiss: spec.dismiss } : {}),
         },
     };
 }

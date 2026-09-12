@@ -103,11 +103,7 @@ export interface CanvasInteractionDef {
     readonly id: string;
     /** Set by the spec resolver. A definition made in code has no origin. */
     readonly origin?: 'spec';
-    /**
-     * Gestures that return this interaction to its neutral state, normalised by
-     * the factory. Absent on presets that retain nothing. The runtime honours
-     * `navigate`'s list today; the others follow with the per-interaction reset.
-     */
+    /** Gestures that return this interaction to its neutral state, normalised by the factory. Absent on presets that retain nothing. */
     readonly reset?: readonly InteractionResetGesture[];
     /** Drops state the preset keeps outside the chart's retained updates, when a reset gesture fires. */
     onReset?(): void;
@@ -294,7 +290,7 @@ export interface NavigateOptions {
     zoom?: boolean;
     wheelSensitivity?: number;
     domainGuard?: Partial<NavigationDomainGuard>;
-    /** Returns the viewport to the full frame. Defaults to ['double-click']; 'escape' arrives with the per-interaction reset. */
+    /** Returns the viewport to the full frame. Defaults to ['double-click']. */
     reset?: readonly NavigationResetGesture[];
     resetTransition?: NavigationTransition;
 }
@@ -367,7 +363,6 @@ export function inspectIndex(options: InspectIndexOptions = {}): CanvasInteracti
 }
 
 export function brushZoom(options: BrushZoomOptions = {}): CanvasInteractionDef {
-    // Escape returned a brushed zoom to the full frame before the reset list existed; it still does.
     return withReset(createBrushZoomInteraction(options), options.reset, ['double-click', 'escape']);
 }
 
@@ -394,7 +389,7 @@ export function brushAngle(options: AngularBrushOptions = {}): CanvasInteraction
 
 export function navigate(options: NavigateOptions = {}): CanvasInteractionDef {
     const definition = createNavigateInteraction(options);
-    // The trigger already normalised the list; the definition mirrors it for the reset dispatcher.
+    // Mirrors the trigger's normalised list.
     return { ...definition, reset: definition.eventSource.reset ?? NAVIGATION_RESET };
 }
 

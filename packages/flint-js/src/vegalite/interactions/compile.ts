@@ -395,7 +395,7 @@ export function addVegaLiteInteractions(
         }
         return null;
     }
-    // Admission decides what this chart can honour. A code definition still throws; a spec
+    // Admission decides what this chart can honour. A code definition throws; a spec
     // entry is dropped with a warning. Everything below reads the admitted list, and the plan
     // carries it so the runtime mounts the same list.
     const admission = admitInteractions(templateSemantics, canvasInteractions);

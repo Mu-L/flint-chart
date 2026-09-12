@@ -197,8 +197,8 @@ function modeSpec(
     case 'keyboard-focus': return { interactions: [entry('click-highlight', { targets: ['mark'] })], keyboardTargeting: true };
     case 'select-context': return { interactions: [entry('select'), entry('context-activate')] };
     case 'legend-toggle': return { interactions: [entry('legend-toggle')] };
-    case 'long-press': return { interactions: [entry('long-press')], dismiss: { click: 'any', escape: true } };
-    case 'double-activate': return { interactions: [entry('double-activate')], dismiss: { click: 'any', escape: true } };
+    case 'long-press': return { interactions: [entry('long-press')] };
+    case 'double-activate': return { interactions: [entry('double-activate')] };
     case 'brush-zoom': return { interactions: [entry('brush-zoom')] };
     default: return {
       interactions: [entry('navigate', {
@@ -883,9 +883,6 @@ function InteractiveChart({
           expressionInterpreter,
           ariaLabel: input.chart_spec.title,
           keyboardTargeting: mode === 'keyboard-focus',
-          dismiss: mode === 'long-press' || mode === 'double-activate'
-            ? { click: 'any', escape: true }
-            : undefined,
         });
     } catch (error) {
       // The resolver rejects a malformed spec before anything mounts.
