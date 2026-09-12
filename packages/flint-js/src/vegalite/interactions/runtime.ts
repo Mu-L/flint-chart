@@ -599,7 +599,7 @@ export function mountVegaInteractions(
     const navigationInteraction = canvasInteractions.find(
         (interaction) => interaction.eventSource.type === 'navigation',
     );
-    const backgroundResetInteraction = navigationInteraction?.eventSource.reset?.includes('click-background')
+    const backgroundResetInteraction = navigationInteraction?.eventSource.reset?.includes('click-none')
         ? navigationInteraction
         : undefined;
     const elementDragInteraction = elementDragInteractions[0];
@@ -1701,20 +1701,16 @@ export function mountVegaInteractions(
             resolveTarget('click', 'legend-item', [], legend),
         )
             : resolveTarget('click', normalized.role, normalized.event.hits);
+        // click-none: the hit resolved to nothing, margin included.
         if (backgroundResetInteraction && !target && !legend) {
-            const space = coordinateSpace();
-            const inPlot = point.x >= 0 && point.x <= space.plotWidth
-                && point.y >= 0 && point.y <= space.plotHeight;
-            if (inPlot) {
-                void dispatchNavigation(backgroundResetInteraction, {
-                    type: 'navigation', phase: 'commit', operation: 'reset',
-                    axes: resolvedNavigationAxes(
-                        backgroundResetInteraction.eventSource.axes,
-                        Object.keys(plan.navigationAxes ?? {}) as ('x' | 'y')[],
-                    ),
-                    modifiers: normalized.event.modifiers,
-                });
-            }
+            void dispatchNavigation(backgroundResetInteraction, {
+                type: 'navigation', phase: 'commit', operation: 'reset',
+                axes: resolvedNavigationAxes(
+                    backgroundResetInteraction.eventSource.axes,
+                    Object.keys(plan.navigationAxes ?? {}) as ('x' | 'y')[],
+                ),
+                modifiers: normalized.event.modifiers,
+            });
         }
         for (const interaction of markClickInteractions) {
             const affordanceTarget = legend ? 'legend-item' : 'mark';

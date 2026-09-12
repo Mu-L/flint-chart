@@ -462,11 +462,66 @@ warning-and-drop rule for spec entries stays.
 
 ## 10. Follow-up: `dismiss` becomes a per-interaction `reset`
 
-`dismiss` is one global policy: a click on nothing, or Escape, clears every retained
-`set-style` and `set-annotation` from every interaction. It cannot tell a selection
-from a setting, and an agent reading one entry cannot see how that interaction ends.
-`navigate` already shows the shape we want: `reset`, a list of gestures that return
-that one interaction to its neutral state. The next iteration gives every preset the
-same option with the same gesture names, registry defaults per preset, and a runtime
-that clears retained state per interaction id. The global `dismiss` then leaves the
-spec; the code option can stay for a while as a default only.
+Decided 2026-09-12. `dismiss` is one global policy: a click on nothing, or Escape, clears
+every retained `set-style` and `set-annotation` from every interaction. It cannot tell a
+selection from a setting (a background click un-hides what `legend-toggle` hid while the
+preset's closure still believes the series are hidden), and an agent reading one entry
+cannot see how that interaction ends. `navigate` already has the shape we want: `reset`,
+a list of gestures that return that one interaction to its neutral state.
+
+### Vocabulary
+
+| Gesture | Meaning |
+| --- | --- |
+| `click-none` | one click whose hit resolves to nothing: no mark, no path segment, no legend item, no axis label. Empty plot and margin both count. A click inside the assist radius of a mark is on the mark. |
+| `double-click` | two quick clicks anywhere on the chart. No hit rule: dense charts (maps, heatmaps, areas) have no empty pixel, and a double-click is already a deliberate act. |
+| `escape` | the Escape key while the chart is on the page. |
+
+The hit rule for `click-none` depends only on geometry, never on which other entries are
+mounted, so the meaning of an entry's `reset` does not change when a neighbour is added.
+Escape during a drag cancels the gesture in progress; that is a separate path and stays.
+
+### Shape
+
+- Every preset accepts `reset?: readonly InteractionResetGesture[]`. Factories normalise it
+  onto the definition as `reset`; `navigate` keeps its option and drops `eventSource.reset`.
+- The registry gives each preset `defaultReset` and `supportedReset`. The resolver rejects
+  a spec `reset` outside the supported set as a malformed entry.
+- Definitions may carry `onReset()` so a preset with closure state (`legend-toggle`) can
+  drop it.
+
+| Preset | Default `reset` |
+| --- | --- |
+| `click-highlight`, `axis-highlight`, `click-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-angle`, `linked-brush`, `long-press`, `double-activate` | `['click-none', 'escape']`. The emphasis they commit is retained state, whether the drag overlay is ephemeral or stateful. |
+| `inspect-index` | `['escape']` (releases a locked series) |
+| `navigate`, `brush-zoom` | `['double-click']` |
+| `hover-group-focus`, `inspect`, `context-activate` | none: nothing is retained, so the preset has no `reset` option and the resolver rejects one |
+| `legend-toggle`, `drag-reorder` | `[]` (a setting is not a selection); an author may opt in |
+
+Step 1 landed 2026-09-12: the vocabulary, the option and its normalised copy on the definition,
+the registry's `supportedReset` and `defaultReset`, the resolver checks, and `navigate`
+renamed from `click-background` to `click-none` (a margin click now resets too). The runtime
+honours only `navigate`'s list until step 2; `navigate` accepts `escape` from step 2.
+
+### Runtime
+
+One dispatcher replaces `dismissPolicy`. A click is classified once as `click-none` or not;
+a double-click and Escape are their own events. For each admitted interaction whose list
+holds the gesture, the runtime clears the retained and preview entries stored under that
+interaction's id and calls its `onReset()`. `navigate` and the stateful brush route their
+existing reset paths through the same dispatcher, which retires `backgroundResetInteraction`
+and the region gesture's `escapeClears` flag. The delay that protects `double-activate` from
+a first click stays. Host state (`options.updates`, `applyUpdate`) is never touched by a
+gesture reset: it arrived from outside and the host clears it with `clearUpdate`.
+
+### Admission
+
+A chart that mounts `double-activate` together with an entry whose `reset` lists
+`double-click` has a gesture conflict, like pan against drag. `admitInteractions()` reports
+`conflicting_interactions`; for spec entries the later one is dropped.
+
+### Spec and code surface
+
+`dismiss` leaves `InteractionSpec` and `composeInteractiveOptions()`. `options.dismiss`
+stays one release as a deprecated default for interactions with no explicit `reset`:
+`click` of any value maps to `click-none`, `escape` to `escape`, and `false` to `[]`.

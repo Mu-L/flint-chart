@@ -152,6 +152,8 @@ export type {
     InteractionPresetSummary,
 } from './spec/registry';
 export { resolveInteractionSpec } from './spec/resolve';
+export { INTERACTION_RESET_GESTURES, normalizeResetGestures } from './reset';
+export type { InteractionResetGesture } from './reset';
 export { admitInteractions } from './spec/admission';
 export { composeInteractiveOptions } from './spec/compose';
 export type { ComposedInteractiveOptions } from './spec/compose';

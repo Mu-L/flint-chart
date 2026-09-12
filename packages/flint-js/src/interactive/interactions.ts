@@ -7,6 +7,7 @@ import type {
 } from '../core/interaction-contracts';
 import type { InteractionEventSource, NavigationResetGesture } from './triggers';
 export type { NavigationResetGesture } from './triggers';
+import { NAVIGATION_RESET, NO_RESET, SELECTION_RESET, normalizeResetGestures, type InteractionResetGesture } from './reset';
 import type { InspectIndexShow, InspectMode } from './triggers';
 import type { InspectGuideOptions, RegionGuideOptions } from './guides';
 import type { InteractionAffordance } from './affordances';
@@ -102,6 +103,12 @@ export interface CanvasInteractionDef {
     readonly id: string;
     /** Set by the spec resolver. A definition made in code has no origin. */
     readonly origin?: 'spec';
+    /**
+     * Gestures that return this interaction to its neutral state, normalised by
+     * the factory. Absent on presets that retain nothing. The runtime honours
+     * `navigate`'s list today; the others follow with the per-interaction reset.
+     */
+    readonly reset?: readonly InteractionResetGesture[];
     readonly eventSource: InteractionEventSource;
     readonly affordances?: readonly InteractionAffordance[];
     /** Retained updates from interactions in the same group replace one another. */
@@ -148,6 +155,8 @@ export interface AxisHighlightOptions {
     axis?: 'x' | 'y';
     event?: 'hover' | 'click';
     dimOpacity?: number;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export type ClickHighlightTarget = 'mark' | 'legend' | 'discreteAxis';
@@ -157,18 +166,24 @@ export interface ClickHighlightOptions {
     dimOpacity?: number;
     /** Semantic surfaces activated by this preset. Defaults to all three targets. */
     targets?: readonly ClickHighlightTarget[];
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface ClickGroupFocusOptions {
     id?: string;
     dimOpacity?: number;
     groupBy?: GroupBy;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface ClickAnnotateOptions {
     id?: string;
     dimOpacity?: number;
     format?: (element: SemanticElement, context: InteractionContext) => string;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface LinkedBrushOptions extends SelectOptions {
@@ -190,6 +205,8 @@ export interface SelectOptions {
     dimOpacity?: number;
     /** Transient region shown during the gesture; false disables visual feedback. */
     guide?: RegionGuideOptions | false;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface BrushOptions extends SelectOptions {
@@ -203,6 +220,8 @@ export type LassoSelectOptions = SelectOptions;
 export interface LegendToggleOptions {
     id?: string;
     mutedOpacity?: number;
+    /** Hidden series are a setting, so nothing resets them unless this list says so. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface ContextActivateOptions {
@@ -234,23 +253,31 @@ export interface InspectIndexOptions {
     seriesBy?: string;
     guide?: InspectGuideOptions | false;
     selector?: SemanticTargetSelector;
+    /** Releases a locked series. Defaults to ['escape']. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface BrushZoomOptions {
     id?: string;
     axes?: 'x' | 'y' | 'xy';
     guide?: RegionGuideOptions | false;
+    /** Returns the viewport to the full frame. Defaults to ['double-click']. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface LongPressOptions {
     id?: string;
     holdMs?: number;
     dimOpacity?: number;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 export interface DoubleActivateOptions {
     id?: string;
     dimOpacity?: number;
+    /** Gestures that return this interaction to its neutral state. */
+    reset?: readonly InteractionResetGesture[];
 }
 
 /** How long a gesture-driven viewport change animates, in milliseconds. */
@@ -265,36 +292,48 @@ export interface NavigateOptions {
     zoom?: boolean;
     wheelSensitivity?: number;
     domainGuard?: Partial<NavigationDomainGuard>;
-    reset?: NavigationResetGesture[];
+    /** Returns the viewport to the full frame. Defaults to ['double-click']; 'escape' arrives with the per-interaction reset. */
+    reset?: readonly NavigationResetGesture[];
     resetTransition?: NavigationTransition;
 }
 
 export interface DragReorderOptions {
     id?: string;
+    /** The order is a setting, so nothing resets it unless this list says so. */
+    reset?: readonly InteractionResetGesture[];
+}
+
+/** Attaches the normalised reset list; presets that retain nothing never pass through here. */
+function withReset(
+    definition: CanvasInteractionDef,
+    reset: readonly InteractionResetGesture[] | undefined,
+    fallback: readonly InteractionResetGesture[],
+): CanvasInteractionDef {
+    return { ...definition, reset: normalizeResetGestures(reset, fallback) };
 }
 
 export function clickHighlight(options: ClickHighlightOptions = {}): CanvasInteractionDef {
-    return createClickHighlightInteraction(options);
+    return withReset(createClickHighlightInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function axisHighlight(options: AxisHighlightOptions = {}): CanvasInteractionDef {
-    return createAxisHighlightInteraction(options);
+    return withReset(createAxisHighlightInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function clickGroupFocus(options: ClickGroupFocusOptions = {}): CanvasInteractionDef {
-    return createClickGroupFocusInteraction({
+    return withReset(createClickGroupFocusInteraction({
         id: options.id ?? 'click-group-focus',
         dimOpacity: options.dimOpacity,
         groupBy: options.groupBy,
-    });
+    }), options.reset, SELECTION_RESET);
 }
 
 export function clickAnnotate(options: ClickAnnotateOptions = {}): CanvasInteractionDef {
-    return createClickAnnotateInteraction(options);
+    return withReset(createClickAnnotateInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function linkedBrush(options: LinkedBrushOptions): CanvasInteractionDef {
-    return createLinkedBrushInteraction(options);
+    return withReset(createLinkedBrushInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function hoverGroupFocus(options: HoverGroupFocusOptions): CanvasInteractionDef {
@@ -302,15 +341,15 @@ export function hoverGroupFocus(options: HoverGroupFocusOptions): CanvasInteract
 }
 
 export function select(options: SelectOptions = {}): CanvasInteractionDef {
-    return createSelectInteraction(options);
+    return withReset(createSelectInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function lassoSelect(options: LassoSelectOptions = {}): CanvasInteractionDef {
-    return createLassoSelectInteraction(options);
+    return withReset(createLassoSelectInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function legendToggle(options: LegendToggleOptions = {}): CanvasInteractionDef {
-    return createLegendToggleInteraction(options);
+    return withReset(createLegendToggleInteraction(options), options.reset, NO_RESET);
 }
 
 export function contextActivate(options: ContextActivateOptions = {}): CanvasInteractionDef {
@@ -322,40 +361,42 @@ export function inspect(options: InspectOptions = {}): CanvasInteractionDef {
 }
 
 export function inspectIndex(options: InspectIndexOptions = {}): CanvasInteractionDef {
-    return createInspectIndexInteraction(options);
+    return withReset(createInspectIndexInteraction(options), options.reset, ['escape']);
 }
 
 export function brushZoom(options: BrushZoomOptions = {}): CanvasInteractionDef {
-    return createBrushZoomInteraction(options);
+    return withReset(createBrushZoomInteraction(options), options.reset, NAVIGATION_RESET);
 }
 
 export function longPress(options: LongPressOptions = {}): CanvasInteractionDef {
-    return createLongPressInteraction(options);
+    return withReset(createLongPressInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function doubleActivate(options: DoubleActivateOptions = {}): CanvasInteractionDef {
-    return createDoubleActivateInteraction(options);
+    return withReset(createDoubleActivateInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function brushX(options: BrushOptions = {}): CanvasInteractionDef {
-    return createBrushInteraction('x', options);
+    return withReset(createBrushInteraction('x', options), options.reset, SELECTION_RESET);
 }
 
 export function brushY(options: BrushOptions = {}): CanvasInteractionDef {
-    return createBrushInteraction('y', options);
+    return withReset(createBrushInteraction('y', options), options.reset, SELECTION_RESET);
 }
 
 /** Select an angular interval on a polar chart. */
 export function brushAngle(options: AngularBrushOptions = {}): CanvasInteractionDef {
-    return createAngularBrushInteraction(options);
+    return withReset(createAngularBrushInteraction(options), options.reset, SELECTION_RESET);
 }
 
 export function navigate(options: NavigateOptions = {}): CanvasInteractionDef {
-    return createNavigateInteraction(options);
+    const definition = createNavigateInteraction(options);
+    // The trigger already normalised the list; the definition mirrors it for the reset dispatcher.
+    return { ...definition, reset: definition.eventSource.reset ?? NAVIGATION_RESET };
 }
 
 export function dragReorder(options: DragReorderOptions = {}): CanvasInteractionDef {
-    return createDragReorderInteraction(options);
+    return withReset(createDragReorderInteraction(options), options.reset, NO_RESET);
 }
 
 export function normalizeInteractions(

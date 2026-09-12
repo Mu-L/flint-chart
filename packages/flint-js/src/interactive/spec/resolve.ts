@@ -6,6 +6,7 @@ import {
 } from '../../core/interaction-spec';
 import type { CanvasInteractionDef } from '../interactions';
 import { INTERACTION_PRESETS, type InteractionPresetDefinition } from './registry';
+import { INTERACTION_RESET_GESTURES, isResetGesture } from '../reset';
 
 export interface ResolvedInteractionSpec {
     /** Canvas definitions in spec order, each tagged `origin: 'spec'`. */
@@ -73,6 +74,23 @@ export function resolveInteractionSpec(spec: InteractionSpec | undefined): Resol
         for (const option of definition.requiredOptions ?? []) {
             if (presetOptions[option] === undefined) {
                 throw new Error(`${entryLabel(index, type)}: option "${option}" is required.`);
+            }
+        }
+        if ('reset' in presetOptions) {
+            const reset = presetOptions.reset;
+            if (!Array.isArray(reset)) {
+                throw new Error(`${entryLabel(index, type)}: "reset" must be a list of gestures.`);
+            }
+            if (definition.supportedReset.length === 0) {
+                throw new Error(`${entryLabel(index, type)}: ${type} retains no state, so it has no reset.`);
+            }
+            for (const gesture of reset) {
+                if (!isResetGesture(gesture)) {
+                    throw new Error(`${entryLabel(index, type)}: reset gesture "${String(gesture)}" is unknown. Gestures: ${INTERACTION_RESET_GESTURES.join(', ')}.`);
+                }
+                if (!definition.supportedReset.includes(gesture)) {
+                    throw new Error(`${entryLabel(index, type)}: reset gesture "${gesture}" is not supported by ${type}; it supports ${definition.supportedReset.join(', ')}.`);
+                }
             }
         }
         let created: CanvasInteractionDef;

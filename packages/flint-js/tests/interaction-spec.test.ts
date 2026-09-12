@@ -71,13 +71,13 @@ describe('resolveInteractionSpec', () => {
     it('passes options through, including the navigate reset list', () => {
         const entry: InteractionPresetSpec = {
             type: 'navigate',
-            options: { axes: 'x', pan: false, reset: ['click-background'] },
+            options: { axes: 'x', pan: false, reset: ['click-none'] },
         };
         const { interactions } = resolveInteractionSpec({ interactions: [entry] });
         expect(interactions[0].eventSource).toMatchObject({
-            type: 'navigation', axes: 'x', pan: false, reset: ['click-background'],
+            type: 'navigation', axes: 'x', pan: false, reset: ['click-none'],
         });
-        expect(dataOnly(interactions[0])).toEqual(dataOnly(navigate({ axes: 'x', pan: false, reset: ['click-background'] })));
+        expect(dataOnly(interactions[0])).toEqual(dataOnly(navigate({ axes: 'x', pan: false, reset: ['click-none'] })));
     });
 
     it('takes the id from the entry, so one type can appear twice', () => {
