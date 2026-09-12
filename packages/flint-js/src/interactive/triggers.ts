@@ -217,12 +217,8 @@ export function angularBrushTrigger(
     };
 }
 
-/**
- * The reset gestures a navigation source honours today: a double-click anywhere,
- * or a click whose hit resolves to nothing (`click-none`). `escape` joins with the
- * per-interaction reset dispatcher.
- */
-export type NavigationResetGesture = Exclude<InteractionResetGesture, 'escape'>;
+/** A navigation source honours every reset gesture; the runtime's reset dispatcher runs them. */
+export type NavigationResetGesture = InteractionResetGesture;
 
 export function navigationTrigger(options: {
     axes?: NavigationAxes | 'available';

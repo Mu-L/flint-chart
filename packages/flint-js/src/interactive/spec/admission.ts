@@ -124,5 +124,25 @@ export function admitInteractions(
         admitted = admitted.filter((interaction) => interaction !== victim);
     }
 
+    // A double-click cannot both activate a mark and reset another interaction. Code keeps
+    // today's behaviour, where both fire; a spec entry yields, the later one first.
+    for (;;) {
+        const activate = admitted.find((interaction) => interaction.eventSource.gesture === 'double');
+        const reset = admitted.find((interaction) =>
+            interaction.eventSource.gesture !== 'double' && interaction.reset?.includes('double-click'));
+        if (!activate || !reset) break;
+        if (activate.origin !== 'spec' && reset.origin !== 'spec') break;
+        const later = admitted.indexOf(activate) > admitted.indexOf(reset) ? activate : reset;
+        const earlier = later === activate ? reset : activate;
+        const victim = later.origin === 'spec' ? later : earlier;
+        const kept = victim === activate ? reset : activate;
+        warnings.push({
+            severity: 'warning',
+            code: 'conflicting_interactions',
+            message: `Interaction "${victim.id}" conflicts with "${kept.id}": a double-click cannot both activate a mark and reset another interaction. ${DROPPED}`,
+        });
+        admitted = admitted.filter((interaction) => interaction !== victim);
+    }
+
     return { admitted, warnings };
 }

@@ -3,7 +3,8 @@ import { INTERACTION_RESET_GESTURES, normalizeResetGestures, SELECTION_RESET } f
 import { INTERACTION_PRESET_TYPES } from '../src/core/interaction-spec';
 import { INTERACTION_PRESETS } from '../src/interactive/spec/registry';
 import { resolveInteractionSpec } from '../src/interactive/spec/resolve';
-import { clickHighlight, hoverGroupFocus, legendToggle, navigate } from '../src/interactive/interactions';
+import { clickHighlight, hoverGroupFocus, legendToggle, navigate, type CanvasInteractionDef } from '../src/interactive/interactions';
+import type { InteractionEntry } from '../src/core/interaction-spec';
 
 const REQUIRED: Partial<Record<string, Record<string, unknown>>> = {
     'hover-group-focus': { groupBy: 'Country' },
@@ -67,12 +68,79 @@ describe('reset in a spec', () => {
         })).toThrow(/interaction_spec\.interactions\[0\] \(hover-group-focus\): hover-group-focus retains no state, so it has no reset/);
     });
 
-    it('rejects an unknown gesture and an unsupported one, naming the entry', () => {
+    it('rejects an unknown gesture and a non-list, naming the entry', () => {
         expect(() => resolveInteractionSpec({ interactions: [{ type: 'brush-x', options: { reset: ['click-any'] } }] }))
             .toThrow(/\(brush-x\): reset gesture "click-any" is unknown\. Gestures: click-none, double-click, escape/);
-        expect(() => resolveInteractionSpec({ interactions: [{ type: 'navigate', options: { reset: ['escape'] } }] }))
-            .toThrow(/\(navigate\): reset gesture "escape" is not supported by navigate; it supports click-none, double-click/);
         expect(() => resolveInteractionSpec({ interactions: [{ type: 'brush-x', options: { reset: 'escape' } }] }))
             .toThrow(/\(brush-x\): "reset" must be a list of gestures/);
+    });
+});
+
+describe('the deprecated dismiss option', () => {
+    it('maps onto one list', async () => {
+        const { resetGesturesFromDismiss } = await import('../src/interactive/reset-compat');
+        expect(resetGesturesFromDismiss(undefined)).toBeUndefined();
+        expect(resetGesturesFromDismiss(false)).toEqual([]);
+        expect(resetGesturesFromDismiss({})).toEqual(['click-none', 'escape']);
+        expect(resetGesturesFromDismiss({ click: 'any' })).toEqual(['click-none', 'escape']);
+        expect(resetGesturesFromDismiss({ click: 'plot-background', escape: false })).toEqual(['click-none']);
+        expect(resetGesturesFromDismiss({ click: false, escape: true })).toEqual(['escape']);
+    });
+
+    it('overrides the interactions that reset by default and leaves settings and viewports alone', async () => {
+        const { applyDismissDefaults } = await import('../src/interactive/reset-compat');
+        const { brushZoom, externalInteraction } = await import('../src/interactive/interactions');
+        const external = externalInteraction({ id: 'host', handle: () => null });
+        const [highlight, toggle, viewport, zoom, host] = applyDismissDefaults(
+            [clickHighlight(), legendToggle(), navigate(), brushZoom(), external],
+            false,
+        ) as (CanvasInteractionDef | typeof external)[];
+        expect((highlight as CanvasInteractionDef).reset).toEqual([]);
+        expect((toggle as CanvasInteractionDef).reset).toEqual([]);
+        expect((viewport as CanvasInteractionDef).reset).toEqual(['double-click']);
+        expect((zoom as CanvasInteractionDef).reset).toEqual(['double-click', 'escape']);
+        expect(host).toBe(external);
+        const [again] = applyDismissDefaults([clickHighlight()], { click: 'any', escape: false }) as CanvasInteractionDef[];
+        expect(again.reset).toEqual(['click-none']);
+    });
+});
+
+describe('the dispatcher picks interactions by their own list', () => {
+    it('returns the interactions whose list holds the gesture, in order', async () => {
+        const { interactionsToReset } = await import('../src/interactive/reset');
+        const list = [clickHighlight(), legendToggle(), navigate({ reset: ['click-none', 'double-click'] }), hoverGroupFocus({ groupBy: 'c' })];
+        expect(interactionsToReset(list, 'click-none').map((i) => i.id)).toEqual(['click-highlight', 'navigate']);
+        expect(interactionsToReset(list, 'escape').map((i) => i.id)).toEqual(['click-highlight']);
+        expect(interactionsToReset(list, 'double-click').map((i) => i.id)).toEqual(['navigate']);
+    });
+
+    it('legend-toggle can drop its closure state', () => {
+        expect(typeof legendToggle().onReset).toBe('function');
+        expect(() => legendToggle().onReset!()).not.toThrow();
+    });
+});
+
+describe('admission: a double-click cannot both activate and reset', () => {
+    const PLAN = { fields: ['c'], selectableMarks: ['bar'], resolve: () => null, navigationAxes: ['x'] as const };
+    const fromSpec = (entries: readonly InteractionEntry[]) => resolveInteractionSpec({ interactions: entries }).interactions;
+
+    it('drops the later spec entry with a warning', async () => {
+        const { admitInteractions } = await import('../src/interactive/spec/admission');
+        const later = admitInteractions(PLAN, fromSpec([{ type: 'navigate' }, { type: 'double-activate' }]));
+        expect(later.admitted.map((i) => i.id)).toEqual(['navigate']);
+        expect(later.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
+        expect(later.warnings[0].message).toContain('"double-activate" conflicts with "navigate"');
+        const reversed = admitInteractions(PLAN, fromSpec([{ type: 'double-activate' }, { type: 'navigate' }]));
+        expect(reversed.admitted.map((i) => i.id)).toEqual(['double-activate']);
+    });
+
+    it('keeps both when both come from code, and admits a navigate that resets on escape only', async () => {
+        const { admitInteractions } = await import('../src/interactive/spec/admission');
+        const { doubleActivate } = await import('../src/interactive/interactions');
+        const code = admitInteractions(PLAN, [navigate(), doubleActivate()]);
+        expect(code.admitted.map((i) => i.id)).toEqual(['navigate', 'double-activate']);
+        expect(code.warnings).toEqual([]);
+        const noClash = admitInteractions(PLAN, fromSpec([{ type: 'navigate', options: { reset: ['escape'] } }, { type: 'double-activate' }]));
+        expect(noClash.admitted.map((i) => i.id)).toEqual(['navigate', 'double-activate']);
     });
 });

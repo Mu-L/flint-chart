@@ -109,6 +109,8 @@ export interface CanvasInteractionDef {
      * `navigate`'s list today; the others follow with the per-interaction reset.
      */
     readonly reset?: readonly InteractionResetGesture[];
+    /** Drops state the preset keeps outside the chart's retained updates, when a reset gesture fires. */
+    onReset?(): void;
     readonly eventSource: InteractionEventSource;
     readonly affordances?: readonly InteractionAffordance[];
     /** Retained updates from interactions in the same group replace one another. */
@@ -365,7 +367,8 @@ export function inspectIndex(options: InspectIndexOptions = {}): CanvasInteracti
 }
 
 export function brushZoom(options: BrushZoomOptions = {}): CanvasInteractionDef {
-    return withReset(createBrushZoomInteraction(options), options.reset, NAVIGATION_RESET);
+    // Escape returned a brushed zoom to the full frame before the reset list existed; it still does.
+    return withReset(createBrushZoomInteraction(options), options.reset, ['double-click', 'escape']);
 }
 
 export function longPress(options: LongPressOptions = {}): CanvasInteractionDef {

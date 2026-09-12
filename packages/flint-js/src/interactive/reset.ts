@@ -4,6 +4,8 @@
  * which of them each preset supports. The meaning of a gesture depends only on
  * what the reader did, never on which other interactions a chart mounts.
  */
+import type { CanvasInteractionDef } from './interactions';
+
 export const INTERACTION_RESET_GESTURES = ['click-none', 'double-click', 'escape'] as const;
 
 /**
@@ -39,4 +41,12 @@ export function normalizeResetGestures(
         }
     }
     return [...new Set(reset)];
+}
+
+/** The interactions one gesture resets: those whose list holds it, in their mounted order. */
+export function interactionsToReset(
+    interactions: readonly CanvasInteractionDef[],
+    gesture: InteractionResetGesture,
+): CanvasInteractionDef[] {
+    return interactions.filter((interaction) => interaction.reset?.includes(gesture));
 }

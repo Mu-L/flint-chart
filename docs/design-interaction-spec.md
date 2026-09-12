@@ -494,7 +494,8 @@ Escape during a drag cancels the gesture in progress; that is a separate path an
 | --- | --- |
 | `click-highlight`, `axis-highlight`, `click-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-angle`, `linked-brush`, `long-press`, `double-activate` | `['click-none', 'escape']`. The emphasis they commit is retained state, whether the drag overlay is ephemeral or stateful. |
 | `inspect-index` | `['escape']` (releases a locked series) |
-| `navigate`, `brush-zoom` | `['double-click']` |
+| `navigate` | `['double-click']` |
+| `brush-zoom` | `['double-click', 'escape']` (Escape returned a brushed zoom to the full frame before, and still does) |
 | `hover-group-focus`, `inspect`, `context-activate` | none: nothing is retained, so the preset has no `reset` option and the resolver rejects one |
 | `legend-toggle`, `drag-reorder` | `[]` (a setting is not a selection); an author may opt in |
 
@@ -525,3 +526,12 @@ A chart that mounts `double-activate` together with an entry whose `reset` lists
 `dismiss` leaves `InteractionSpec` and `composeInteractiveOptions()`. `options.dismiss`
 stays one release as a deprecated default for interactions with no explicit `reset`:
 `click` of any value maps to `click-none`, `escape` to `escape`, and `false` to `[]`.
+
+Step 2 landed 2026-09-12: one reset dispatcher in the Vega runtime replaces `dismissPolicy`.
+A click that hits nothing, a double-click, or Escape resets only the interactions whose list
+holds that gesture, each by its own id; `legend-toggle` drops its closure state through
+`onReset()`; `navigate` flies home through its navigation path and the stateful brush clears
+through the gesture's `reset()`. A chart with an `escape` reset becomes focusable and takes
+focus on a pointer press, so Escape reaches the chart the reader touched last and no other.
+`double-activate` next to a `double-click` reset is an admission conflict. `options.dismiss`
+survives as a deprecated code option that maps onto every interaction that resets by default.

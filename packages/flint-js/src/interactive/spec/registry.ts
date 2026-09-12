@@ -179,7 +179,7 @@ export const INTERACTION_PRESETS: { readonly [T in InteractionPresetType]: Inter
         requires: 'navigation',
         gesture: 'drag',
         supportedReset: ANY_RESET,
-        defaultReset: NAVIGATION_RESET,
+        defaultReset: ['double-click', 'escape'],
         create: brushZoom,
     },
     'linked-brush': {
@@ -259,7 +259,7 @@ export const INTERACTION_PRESETS: { readonly [T in InteractionPresetType]: Inter
         description: 'Drag to pan, wheel or pinch to zoom, and a reset gesture to return to the full frame.',
         requires: 'navigation',
         gesture: 'navigate',
-        supportedReset: ['click-none', 'double-click'],
+        supportedReset: ANY_RESET,
         defaultReset: NAVIGATION_RESET,
         create: navigate,
     },
