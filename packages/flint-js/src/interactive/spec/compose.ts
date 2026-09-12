@@ -7,7 +7,7 @@ import { resolveInteractionSpec } from './resolve';
 export interface ComposedInteractiveOptions {
     /** Spec interactions first, then the code's, with no id shared between the two. */
     readonly interactions: readonly InteractionDef[];
-    /** Spec updates first, then the code's. */
+    /** From the code only. The spec carries behaviour, not state. */
     readonly updates: readonly ChartUpdate[];
     readonly assistedTargeting: BuildInteractiveChartOptions['assistedTargeting'];
     readonly keyboardTargeting: boolean | undefined;
@@ -25,7 +25,7 @@ type ComposeOptions = Pick<
 /**
  * Merge `input.interaction_spec` with what the code passed to `buildInteractiveChart()`.
  *
- * The spec comes first in every list. A code definition cannot replace a spec
+ * The spec's interactions come first. A code definition cannot replace a spec
  * entry by reusing its id; the collision is an error that names both sources.
  * The three surface policies come from the code when it sets them, `false`
  * included, and from the spec otherwise. A backend that runs no interactions
@@ -37,17 +37,13 @@ export function composeInteractiveOptions(input: ComposeInput, options: ComposeO
     const code = options.interactions ?? [];
     const warnings: ChartWarning[] = [];
     let specInteractions = resolved.interactions;
-    let specUpdates = resolved.updates;
-    if (options.backend !== 'vegalite'
-        && code.length === 0
-        && (specInteractions.length > 0 || specUpdates.length > 0)) {
+    if (options.backend !== 'vegalite' && code.length === 0 && specInteractions.length > 0) {
         warnings.push({
             severity: 'info',
             code: 'interactions_ignored',
             message: `interaction_spec is ignored: backend "${options.backend}" does not run interactions.`,
         });
         specInteractions = [];
-        specUpdates = [];
     }
     const codeIds = new Set(code.map((interaction) => interaction.id));
     const shared = specInteractions.find((interaction) => codeIds.has(interaction.id));
@@ -58,7 +54,7 @@ export function composeInteractiveOptions(input: ComposeInput, options: ComposeO
     }
     return {
         interactions: normalizeInteractions([...specInteractions, ...code]),
-        updates: [...specUpdates, ...(options.updates ?? [])],
+        updates: options.updates ?? [],
         assistedTargeting: options.assistedTargeting ?? resolved.surface.assistedTargeting,
         keyboardTargeting: options.keyboardTargeting ?? resolved.surface.keyboardTargeting,
         dismiss: options.dismiss ?? resolved.surface.dismiss,

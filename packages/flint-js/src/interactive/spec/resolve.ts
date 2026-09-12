@@ -1,4 +1,3 @@
-import type { ChartUpdate } from '../../core/interaction-contracts';
 import {
     INTERACTION_PRESET_TYPES,
     type InteractionEntry,
@@ -11,13 +10,11 @@ import { INTERACTION_PRESETS, type InteractionPresetDefinition } from './registr
 export interface ResolvedInteractionSpec {
     /** Canvas definitions in spec order, each tagged `origin: 'spec'`. */
     readonly interactions: readonly CanvasInteractionDef[];
-    readonly updates: readonly ChartUpdate[];
     readonly surface: Pick<InteractionSpec, 'assistedTargeting' | 'keyboardTargeting' | 'dismiss'>;
 }
 
 const EMPTY: ResolvedInteractionSpec = Object.freeze({
     interactions: Object.freeze([]) as readonly CanvasInteractionDef[],
-    updates: Object.freeze([]) as readonly ChartUpdate[],
     surface: Object.freeze({}),
 });
 
@@ -96,18 +93,8 @@ export function resolveInteractionSpec(spec: InteractionSpec | undefined): Resol
         idOwners.set(created.id, index);
         interactions.push({ ...created, origin: 'spec' });
     });
-    const updates = spec.updates ?? [];
-    if (!Array.isArray(updates)) {
-        throw new Error('interaction_spec.updates must be an array of ChartUpdate values.');
-    }
-    updates.forEach((update, index) => {
-        if (!update || typeof update !== 'object' || typeof update.id !== 'string' || !Array.isArray(update.ops)) {
-            throw new Error(`interaction_spec.updates[${index}] must be a ChartUpdate with a string id and an ops array.`);
-        }
-    });
     return {
         interactions,
-        updates,
         surface: {
             ...(spec.assistedTargeting !== undefined ? { assistedTargeting: spec.assistedTargeting } : {}),
             ...(spec.keyboardTargeting !== undefined ? { keyboardTargeting: spec.keyboardTargeting } : {}),

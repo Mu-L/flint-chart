@@ -11,8 +11,6 @@
  * envelope around them, so the core stays free of the interactive runtime.
  */
 
-import type { ChartUpdate } from './interaction-contracts';
-
 /** The shipped interaction presets. Each name is also that preset's default id. */
 export const INTERACTION_PRESET_TYPES = [
     'click-highlight',
@@ -78,13 +76,13 @@ export interface InteractionDismissPolicy {
 /**
  * How a chart behaves. Sits beside `chart_spec` and `theme_spec` in
  * `ChartAssemblyInput`. Only the Vega-Lite interactive surface reads it; the
- * assemblers and the static backends leave it untouched.
+ * assemblers and the static backends leave it untouched. Retained state is not
+ * part of it: a host applies that through the surface (`applyUpdate`,
+ * `setUpdates`, `dispatch`), because state arrives from outside the chart.
  */
 export interface InteractionSpec {
     /** One entry per interaction. Its type names the preset that makes it; no string shorthand. */
     interactions: readonly InteractionEntry[];
-    /** Retained state applied at mount: emphasis, annotations, a viewport, an order. */
-    updates?: readonly ChartUpdate[];
     /** Presets assist by default; false requires direct hits, maxDistance overrides eligible presets. */
     assistedTargeting?: boolean | AssistedTargetingOptions;
     keyboardTargeting?: boolean;

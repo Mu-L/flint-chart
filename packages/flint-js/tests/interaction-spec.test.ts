@@ -43,7 +43,6 @@ describe('resolveInteractionSpec', () => {
     it('returns nothing for an absent spec', () => {
         const resolved = resolveInteractionSpec(undefined);
         expect(resolved.interactions).toEqual([]);
-        expect(resolved.updates).toEqual([]);
         expect(resolved.surface).toEqual({});
     });
 
@@ -138,20 +137,13 @@ describe('resolveInteractionSpec', () => {
             .toThrow(/interactions\[1\] \(brush-y\): duplicate id "same"/);
     });
 
-    it('passes updates and surface policies through unchanged', () => {
-        const spec: InteractionSpec = {
-            interactions: [],
-            updates: [{ id: 'seed', ops: [{ op: 'set-style', targets: [], value: { state: 'normal' } }] }],
-            dismiss: { escape: true },
-            keyboardTargeting: true,
-        };
-        const resolved = resolveInteractionSpec(spec);
-        expect(resolved.updates).toEqual(spec.updates);
-        expect(resolved.surface).toEqual({ dismiss: { escape: true }, keyboardTargeting: true });
+    it('passes the surface policies through unchanged', () => {
+        const spec: InteractionSpec = { interactions: [], dismiss: { escape: true }, keyboardTargeting: true };
+        expect(resolveInteractionSpec(spec).surface).toEqual({ dismiss: { escape: true }, keyboardTargeting: true });
     });
 
-    it('rejects a malformed update', () => {
-        expect(() => resolveInteractionSpec({ interactions: [], updates: [{ id: 'seed' } as never] }))
-            .toThrow(/interaction_spec\.updates\[0\] must be a ChartUpdate/);
+    it('has no place for retained state', () => {
+        // Updates are a host signal (applyUpdate, setUpdates, dispatch), not behaviour.
+        expect('updates' in resolveInteractionSpec({ interactions: [] })).toBe(false);
     });
 });

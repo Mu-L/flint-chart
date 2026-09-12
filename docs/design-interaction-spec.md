@@ -110,7 +110,7 @@ Already serialisable:
 
 - every preset option except one (`id`, `dimOpacity`, `targets`, `axes`, `mode`, `match`, `guide.style`, `tolerance`, `groupBy`, `domainGuard`, `reset`, `show`, `seriesBy`, `selector`, ...);
 - `ChartUpdate` and all seven ops, including `SemanticTargetSelector` (`{ select: { key: { Country: 'Japan' } } }`);
-- the surface policies on `BuildInteractiveChartOptions`: `dismiss`, `assistedTargeting`, `keyboardTargeting`, and the initial `updates` list.
+- the surface policies on `BuildInteractiveChartOptions`: `dismiss`, `assistedTargeting`, `keyboardTargeting`.
 
 Not serialisable:
 
@@ -178,7 +178,7 @@ Why top level and not inside `chart_spec`:
 
 - It follows the existing triad. `theme_spec` sits beside `chart_spec` "because the same theme applies to every chart" (`core/types.ts`). Behaviour is the same kind of orthogonal concern: `navigate` applies to any chart with a continuous axis, and a static renderer ignores it entirely.
 - Static backends (ECharts, Chart.js, Plotly, Excel, Image-Charts, flint-py) can ignore one top-level key with an `info` warning, exactly as they ignore `theme_spec` today.
-- The object has room for surface policies (`dismiss`, `assistedTargeting`, `keyboardTargeting`) and initial `updates`, which do not belong in `chart_spec`.
+- The object has room for the surface policies (`dismiss`, `assistedTargeting`, `keyboardTargeting`), which do not belong in `chart_spec`.
 
 The name follows the `snake_case` convention of the other top-level keys.
 
@@ -230,8 +230,6 @@ export interface InteractionEntry {
 export interface InteractionSpec {
     /** One object per preset. The type name selects the factory. No string shorthand. */
     interactions: readonly InteractionPresetSpec[];
-    /** Retained state applied at mount: emphasis, annotations, a viewport, an order. */
-    updates?: readonly ChartUpdate[];
     assistedTargeting?: boolean | AssistedTargetingOptions;
     keyboardTargeting?: boolean;
     dismiss?: InteractionDismissPolicy | false;
@@ -259,13 +257,6 @@ Example:
       { "type": "click-highlight", "options": { "dimOpacity": 0.2, "targets": ["mark", "legend"] } },
       { "type": "inspect-index", "options": { "axis": "x", "seriesBy": "Country", "show": "all" } },
       { "type": "navigate", "options": { "axes": "x", "pan": false, "reset": ["double-click"] } }
-    ],
-    "updates": [
-      { "id": "seed", "ops": [
-        { "op": "set-annotation",
-          "target": { "select": { "key": { "Country": "Japan", "Year": 2018 } } },
-          "value": { "text": "Reform year" } }
-      ] }
     ],
     "dismiss": { "escape": true, "click": "plot-background" }
   }
@@ -312,7 +303,6 @@ export function listInteractionPresets(): Pick<InteractionEntry, 'type' | 'label
 // resolve.ts
 export function resolveInteractionSpec(spec: InteractionSpec | undefined): {
     interactions: InteractionDef[];
-    updates: ChartUpdate[];
     surface: Pick<InteractiveChartSurfaceOptions, 'assistedTargeting' | 'keyboardTargeting' | 'dismiss'>;
 };
 ```
@@ -336,11 +326,10 @@ keep only `create` under `interactive/`.
 
 `buildInteractiveChart(container, input, options)`:
 
-1. `resolveInteractionSpec(input.interaction_spec)` gives spec-side interactions, updates, and surface policies. It does not know the chart yet, so it drops nothing.
+1. `resolveInteractionSpec(input.interaction_spec)` gives spec-side interactions and surface policies. It does not know the chart yet, so it drops nothing.
 2. The Vega mount owns `_interactionSemantics`, so it runs `admitInteractions()` there. A spec-origin preset the chart cannot honour is dropped and reported as a `ChartWarning`. A code-origin preset still throws, as today: a developer sees the exception, an agent reads the warning.
 3. Interactions: spec list first, then `options.interactions`. `normalizeInteractions()` rejects duplicate ids as it does today. Code cannot silently replace a spec entry; give it a different id.
-4. Updates: spec `updates` first, then `options.updates`.
-5. Surface policies: `options` win over the spec when both are set.
+4. Surface policies: `options` win over the spec when both are set. Retained state (`options.updates`, `applyUpdate`, `setUpdates`, `dispatch`) stays a host signal and never comes from the spec.
 
 The resolver tags each definition it creates with `origin: 'spec'` so the mount can tell the two sources apart. Warnings collected at mount are exposed on the surface as `surface.warnings` after `ready`, and logged once with `console.warn`.
 
@@ -398,7 +387,7 @@ Phase 1.
 
 | Option | Why not |
 | --- | --- |
-| `chart_spec.interactions: [...]` | No home for `dismiss`, `assistedTargeting`, `updates`; couples behaviour to the "what to draw" object that static backends must read. |
+| `chart_spec.interactions: [...]` | No home for `dismiss`, `assistedTargeting`; couples behaviour to the "what to draw" object that static backends must read. |
 | `chart_spec.chartProperties.interactions` | `chartProperties` is per-template and validated against `ChartTemplateDef.properties`; presets are cross-template. |
 | Vega-Lite `params` style (`{ name, select: { type: 'interval' } }`) | Flint's presets are higher level (they carry policy, not just selection). Exposing Vega selections would leak the backend. |
 | Serialise handlers as expression strings | A new language to specify, secure, and document. Presets already cover the shared cases; code covers the rest. |
@@ -445,7 +434,8 @@ Phase 1.
 | Brush naming | three types: `brush-x`, `brush-y`, `brush-angle` |
 | Unsupported preset for the chart type | `warning`, entry dropped; the chart still renders |
 | Same id in spec and code | error, as `normalizeInteractions()` does today |
-| Scope of v1 | `interactions`, `updates`, `dismiss`, `assistedTargeting`, `keyboardTargeting` |
+| Scope of v1 | `interactions`, `dismiss`, `assistedTargeting`, `keyboardTargeting` |
+| Retained state (`updates`) | not in `interaction_spec` (removed 2026-09-11): state arrives from outside the chart, through `applyUpdate`, `setUpdates`, `dispatch`, or `options.updates`. A JSON home for seeded state, if needed, is a separate top-level field. |
 
 ## 8. Risks
 
@@ -469,3 +459,14 @@ and falls back to the inferred capabilities. The same declaration feeds
 `list_chart_types.interactions` in the MCP server and the generated chart reference, so
 the list an agent reads and the list the mount enforces are one list. The
 warning-and-drop rule for spec entries stays.
+
+## 10. Follow-up: `dismiss` becomes a per-interaction `reset`
+
+`dismiss` is one global policy: a click on nothing, or Escape, clears every retained
+`set-style` and `set-annotation` from every interaction. It cannot tell a selection
+from a setting, and an agent reading one entry cannot see how that interaction ends.
+`navigate` already shows the shape we want: `reset`, a list of gestures that return
+that one interaction to its neutral state. The next iteration gives every preset the
+same option with the same gesture names, registry defaults per preset, and a runtime
+that clears retained state per interaction id. The global `dismiss` then leaves the
+spec; the code option can stay for a while as a default only.

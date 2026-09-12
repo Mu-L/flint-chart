@@ -1229,9 +1229,10 @@ export interface ChartAssemblyInput {
     /**
      * Interactions — describes *how it behaves*.
      *
-     * Presets named by type with their options, retained updates applied at
-     * mount, and the surface policies (dismiss, assisted and keyboard
-     * targeting). Sits beside `chart_spec` for the same reason `theme_spec`
+     * Presets named by type with their options, and the surface policies
+     * (dismiss, assisted and keyboard targeting). Retained state is not part
+     * of it; a host applies that through the interactive surface.
+     * Sits beside `chart_spec` for the same reason `theme_spec`
      * does: one behaviour applies to many charts, and a static backend ignores
      * it without harm.
      *

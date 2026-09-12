@@ -5,7 +5,6 @@ import type { InteractionSpec } from '../src/core/interaction-spec';
 
 const SPEC: InteractionSpec = {
     interactions: [{ type: 'legend-toggle' }, { type: 'navigate', options: { axes: 'x' } }],
-    updates: [{ id: 'seed', ops: [{ op: 'set-style', targets: [], value: { state: 'normal' } }] }],
     dismiss: { escape: false },
     keyboardTargeting: true,
 };
@@ -24,7 +23,7 @@ describe('composeInteractiveOptions', () => {
         expect(composed.warnings).toEqual([]);
     });
 
-    it('puts the spec before the code, for interactions and for updates', () => {
+    it('puts the spec interactions before the code, and takes updates from the code only', () => {
         const codeUpdate = { id: 'host', ops: [] };
         const composed = composeInteractiveOptions({ interaction_spec: SPEC }, {
             backend: 'vegalite', interactions: [select()], updates: [codeUpdate],
@@ -32,7 +31,7 @@ describe('composeInteractiveOptions', () => {
         expect(ids(composed)).toEqual(['legend-toggle', 'navigate', 'select']);
         expect((composed.interactions[0] as CanvasInteractionDef).origin).toBe('spec');
         expect((composed.interactions[2] as CanvasInteractionDef).origin).toBeUndefined();
-        expect(composed.updates.map((update) => update.id)).toEqual(['seed', 'host']);
+        expect(composed.updates).toEqual([codeUpdate]);
     });
 
     it('rejects an id shared by the spec and the code, naming both sources', () => {
