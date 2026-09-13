@@ -6,7 +6,7 @@ import type { LabelSizingDecision } from './decisions';
 import type { SemanticAnnotation, FormatSpec, DomainConstraint, TickConstraint } from './field-semantics';
 import type { ColorDecisionResult } from './color-decisions';
 import type { GeometryKind, ThemeGeometry, ThemeSpec } from './theme/types';
-import type { InteractionSpec } from './interaction-spec';
+import type { ChartInteractionSupport, InteractionSpec } from './interaction-spec';
 
 /**
  * Core types for the chart engine library.
@@ -919,6 +919,9 @@ export interface ChartTemplateDef {
         includeConnectiveMarks?: boolean;
         markTypes?: readonly string[];
     };
+
+    /** What this chart type offers to interaction presets; absent means none. */
+    interactions?: ChartInteractionSupport;
 
     /**
      * How the primary mark encodes its quantitative value.

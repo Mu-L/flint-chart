@@ -37,6 +37,48 @@ export const INTERACTION_PRESET_TYPES = [
 
 export type InteractionPresetType = (typeof INTERACTION_PRESET_TYPES)[number];
 
+/** A fact about a chart that at least one interaction preset reads at runtime. */
+export const INTERACTION_CAPABILITIES = [
+    'elements',
+    'cartesian-region',
+    'angular-region',
+    'navigation',
+    'reorder',
+    'legend',
+    'discrete-axis',
+    'index',
+] as const;
+
+export type InteractionCapability = (typeof INTERACTION_CAPABILITIES)[number];
+
+/**
+ * What a chart type offers to interaction presets, declared on
+ * `ChartTemplateDef.interactions`. An absent key means the chart type never
+ * offers that capability. The assembler confirms the data-dependent ones
+ * against the encodings: a legend needs a bound discrete legend channel,
+ * navigation needs a continuous unfaceted axis, reorder needs a discrete axis.
+ */
+export interface ChartInteractionSupport {
+    /** Marks resolve to data elements, so click, hover, annotate, and inspect presets work. */
+    elements?: boolean;
+    /** Drag regions the plot can resolve marks in. */
+    region?: readonly ('cartesian' | 'angular')[];
+    /**
+     * Continuous positional axes whose domains pan and zoom. `geo` marks a
+     * chart that places marks through a projection: pan and zoom then move the
+     * projection's extent, and both axes navigate together.
+     */
+    navigation?: { axes?: readonly ('x' | 'y')[]; geo?: boolean };
+    /** Discrete positional axes whose domain order a drag can change. */
+    reorder?: { axes?: readonly ('x' | 'y')[]; includeConnectiveMarks?: boolean; markTypes?: readonly string[] };
+    /** A discrete legend whose items stand for series or categories. */
+    legend?: boolean;
+    /** Axis labels stand for categories a pointer can target. */
+    discreteAxis?: boolean;
+    /** One position on the index axis reads a value from every series. */
+    index?: boolean;
+}
+
 /**
  * One preset as JSON: the type name, an optional id, and that preset's options
  * under `options`, for example
