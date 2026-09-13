@@ -102,6 +102,7 @@ export function testCaseToAssemblyInput(t: TestCase, canvasSize: CanvasSize = DE
     },
     options: t.assembleOptions,
     semantic_annotations: t.semanticAnnotations,
+    ...(t.interactionSpec ? { interaction_spec: t.interactionSpec } : {}),
     // Data goes last so the compact, frequently-edited spec stays at the top of
     // the editor and the bulky values array sits at the bottom.
     data: { values: t.data },

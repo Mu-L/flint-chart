@@ -213,6 +213,14 @@ export function assemblePreviewSpec(
   return spec;
 }
 
+/** The input the preview assembles: the same sizing the static render uses, for an interactive mount. */
+export function previewAssemblyInput(
+  input: ChartAssemblyInput,
+  viewport?: { width: number; height?: number },
+): ChartAssemblyInput {
+  return withAppPreviewDefaults(input, viewport);
+}
+
 /**
  * Assemble a Flint {@link ChartAssemblyInput} to a Vega-Lite spec and render it
  * to an SVG string. Throws on assembly or compile failure so the caller can
