@@ -1,4 +1,5 @@
 import type { ChartInteractionResolver } from '../../core/interaction-semantics';
+import type { InteractionCapability } from '../../core/interaction-spec';
 import {
     isCanvasInteraction,
     type ChartUpdatePresenter,
@@ -47,6 +48,8 @@ const LEGEND_ENTRY_MARK = '__flint_legend_entry';
 const SUPPORTED_SPEC_MARKS = new Set(['arc', 'area', 'bar', 'boxplot', 'circle', 'geoshape', 'line', 'point', 'rect', 'rule', 'tick']);
 
 interface TemplateInteractionSemantics {
+    chartType?: string;
+    capabilities?: readonly InteractionCapability[];
     fields: string[];
     sourceRecords?: readonly Record<string, unknown>[];
     provenanceFields?: readonly string[];

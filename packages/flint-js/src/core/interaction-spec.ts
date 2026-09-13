@@ -37,10 +37,14 @@ export const INTERACTION_PRESET_TYPES = [
 
 export type InteractionPresetType = (typeof INTERACTION_PRESET_TYPES)[number];
 
-/** A fact about a chart that at least one interaction preset reads at runtime. */
+/**
+ * A fact about a chart that at least one interaction preset reads at runtime.
+ * `region` is any drag region the plot resolves marks in; `angular-region` is
+ * the polar kind, which only the angular brush needs.
+ */
 export const INTERACTION_CAPABILITIES = [
     'elements',
-    'cartesian-region',
+    'region',
     'angular-region',
     'navigation',
     'reorder',

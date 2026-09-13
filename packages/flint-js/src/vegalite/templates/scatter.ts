@@ -55,6 +55,7 @@ export const scatterPlotDef: ChartTemplateDef = {
         region: ['cartesian'],
         navigation: {},
         legend: true,
+        index: true,
     },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
@@ -140,6 +141,7 @@ export const regressionDef: ChartTemplateDef = {
         region: ['cartesian'],
         navigation: {},
         legend: true,
+        index: true,
     },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {

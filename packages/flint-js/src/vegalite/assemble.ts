@@ -53,6 +53,7 @@ import {
     InstantiateContext,
 } from '../core/types';
 import type { ChartWarning, ChartOption, OptionEvalContext } from '../core/types';
+import type { InteractionCapability } from '../core/interaction-spec';
 import { applyEncodingOverrides } from '../core/encoding-overrides';
 import { applyAggregation } from '../core/aggregate';
 import { planBandDodge, resolveDodge } from '../core/band-dodge';
@@ -944,8 +945,28 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
             .filter((candidate, index, candidates) => candidates.findIndex(
                 (axis) => axis.axis === candidate.axis && axis.field === candidate.field,
             ) === index);
+        const discreteLegend = Object.keys(legendFields ?? {})
+            .some((channel) => !rangeLegendChannels.includes(channel));
+        const discreteAxis = (['x', 'y'] as const).some((axis) => {
+            const encoding = resolvedEncodings[axis];
+            return !!encoding?.field && (encoding.type === 'nominal' || encoding.type === 'ordinal');
+        });
+        const hasElements = 'resolve' in templateSemantics
+            || templateSemantics.fields.length > 0
+            || templateSemantics.selectableMarks.length > 0;
+        const capabilities: InteractionCapability[] = [];
+        if (support?.elements && hasElements) capabilities.push('elements');
+        if (support?.region?.length) capabilities.push('region');
+        if (support?.region?.includes('angular')) capabilities.push('angular-region');
+        if (navigationAxes.length > 0) capabilities.push('navigation');
+        if (reorderAxes.length > 0) capabilities.push('reorder');
+        if (support?.legend && discreteLegend) capabilities.push('legend');
+        if (support?.discreteAxis && discreteAxis) capabilities.push('discrete-axis');
+        if (support?.index && resolvedEncodings.x?.field) capabilities.push('index');
         result._interactionSemantics = {
             ...templateSemantics,
+            chartType: chartTemplate.chart,
+            capabilities,
             supportedRegionGestures: support?.region ? [...support.region] : undefined,
             axisFields: Object.fromEntries((['x', 'y'] as const).flatMap((axis) => {
                 const encoding = resolvedEncodings[axis];

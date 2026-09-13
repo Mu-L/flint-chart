@@ -569,7 +569,7 @@ describe('Vega-Lite semantic interactions', () => {
             .toEqual({ signal: `__flint_reorder_${axis}_domain` });
     });
 
-    it('leaves drag reorder inert without a template-declared category scale', () => {
+    it('refuses drag reorder without a template-declared category scale', () => {
         expect(() => addVegaLiteInteractions({ mark: 'bar' }, [dragReorder()]))
             .toThrow('requires chart interaction semantics');
         const scatter = assembleVegaLite({
@@ -580,7 +580,8 @@ describe('Vega-Lite semantic interactions', () => {
             semantic_types: { x: 'Number', y: 'Number' },
             data: { values: [{ x: 1, y: 2 }] },
         }) as any;
-        expect(addVegaLiteInteractions(scatter, [dragReorder()])?.reorderAxis).toBeUndefined();
+        expect(() => addVegaLiteInteractions(scatter, [dragReorder()]))
+            .toThrow('Interaction "drag-reorder" requires a discrete axis whose order can change; Scatter Plot has none.');
 
         const facetedSemantics = barChartDef.semanticInteractions!({
             resolvedEncodings: {
@@ -681,7 +682,8 @@ describe('Vega-Lite semantic interactions', () => {
             data: { values: [{ month: 'Jan', low: 1, high: 3 }, { month: 'Feb', low: 2, high: 4 }] },
         }) as any;
         expect(spec._interactionSemantics.reorderAxes).toEqual([]);
-        expect(addVegaLiteInteractions(spec, [dragReorder()])?.reorderAxis).toBeUndefined();
+        expect(() => addVegaLiteInteractions(spec, [dragReorder()]))
+            .toThrow('Interaction "drag-reorder" requires a discrete axis whose order can change; Range Area Chart has none.');
     });
 
     it('distinguishes dumbbell connectors from stationary Slope stems during reorder preview', () => {
@@ -731,7 +733,7 @@ describe('Vega-Lite semantic interactions', () => {
         expect(() => addVegaLiteInteractions({
             mark: 'line',
             _interactionSemantics: { fields: [], selectableMarks: [], navigationAxes: ['x'] },
-        }, [clickMark()])).toThrow('requires chart element semantics');
+        }, [clickMark()])).toThrow('requires marks that resolve to data');
     });
 
     it('instruments semantic targets for external interactions without adding canvas gestures', () => {
@@ -1933,7 +1935,7 @@ describe('Vega-Lite semantic interactions', () => {
             }),
         };
         expect(() => addVegaLiteInteractions(cartesian, [brushAngle()]))
-            .toThrow('requires a polar chart with angular-region support');
+            .toThrow('requires a polar chart with an angular region');
 
         const polar = {
             mark: 'arc',
@@ -3413,7 +3415,7 @@ describe('Vega-Lite semantic interactions', () => {
     });
 
     it('pins a themed Calendar continuous legend to its full extent', async () => {
-        const spec = assembleVegaLite({
+        const assembleCalendar = (): any => assembleVegaLite({
             data: { values: [
                 { Date: '2024-01-01', Activity: 26 },
                 { Date: '2024-01-02', Activity: 27 },
@@ -3426,8 +3428,11 @@ describe('Vega-Lite semantic interactions', () => {
                 encodings: { x: 'Date', color: 'Activity' },
             },
             theme_spec: 'pop',
-        } as any) as any;
-        const { compiled } = instrument(spec, [legendToggle()]);
+        } as any);
+        expect(() => instrument(assembleCalendar(), [legendToggle()]))
+            .toThrow('Interaction "legend-toggle" requires a discrete legend; Calendar Heatmap has none.');
+        const legendClaimer = { ...legendToggle(), preset: undefined, requires: [] };
+        const { compiled } = instrument(assembleCalendar(), [legendClaimer]);
         const view = new View(parse(compiled), { renderer: 'none' });
         await view.runAsync();
 

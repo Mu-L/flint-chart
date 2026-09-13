@@ -555,9 +555,11 @@ The registry's `requires` was written but never read.
 Three parts, each in one place:
 
 1. **A vocabulary of chart capabilities** (`InteractionCapability`, core): a fact some preset
-   reads at runtime. `elements` (marks resolve to data), `cartesian-region`, `angular-region`,
-   `navigation`, `reorder`, `legend`, `discrete-axis`, `index` (one x position reads every
-   series).
+   reads at runtime. `elements` (marks resolve to data), `region` (any drag region the plot
+   resolves marks in), `angular-region` (the polar kind), `navigation`, `reorder`, `legend`,
+   `discrete-axis`, `index` (one x position reads every series). `brush-x` on a polar chart is
+   honoured as an angular brush, which is why the brushes need a region of either kind and only
+   `brush-angle` needs the angular one.
 2. **Per preset, `requires`** in the registry, now a list: the smallest set without which the
    preset does nothing. Brushes need `elements` and a region; `brush-zoom` and `navigate` need
    `navigation`; `legend-toggle` needs `legend`; `axis-highlight` needs `discrete-axis`;
@@ -578,7 +580,8 @@ mark geometry), **P** = the probe over the shipped test cases, **J** = judgment,
 
 | Chart type | elements | region | navigation | reorder | legend | discrete axis | index | Source |
 |---|---|---|---|---|---|---|---|---|
-| Scatter Plot, Regression, Connected Scatter Plot | ✓ | cartesian | x, y | | ✓ | | | T, P |
+| Scatter Plot, Regression | ✓ | cartesian | x, y | | ✓ | | ✓ | T, P, lab |
+| Connected Scatter Plot | ✓ | cartesian | x, y | | ✓ | | | T, P |
 | Ranged Dot Plot | ✓ | cartesian | x, y | connective marks | ✓ | ✓ | | T |
 | Boxplot, Strip Plot | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | | T, P |
 | Bar, Grouped Bar, Stacked Bar, Lollipop | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | | T, P |
@@ -617,7 +620,16 @@ Judgment calls, open for review:
   `axis-highlight` emphasises the marks of one category label; on these charts the x labels are
   periods or bins rather than categories a reader would pick.
 - **`index`** on the charts whose x is a shared index across series: line, area, streamgraph,
-  range area, bump, slope, density, ECDF, candlestick, sparkline.
+  range area, bump, slope, density, ECDF, candlestick, sparkline, and the scatter family, where
+  the lab's curated index-inspection cases (income, year on x) already worked.
+
+### Enforcement, verified
+
+With the match rule in place, a headless survey clicked every mode on both lab tabs: 787
+cards, 0 differences between the code tab and the spec tab. The cards that changed status
+were the KPI Card in every region mode (select, the brushes, lasso), which is the intended
+truth, and two index-inspection cases on scatter plots, which led to the `index` declaration
+on the scatter family above. Every other card kept its status.
 
 ### Discovery
 
