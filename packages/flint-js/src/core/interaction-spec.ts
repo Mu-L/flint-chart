@@ -83,6 +83,60 @@ export interface ChartInteractionSupport {
     index?: boolean;
 }
 
+/** The capabilities each preset needs: the smallest set without which it does nothing. */
+export const INTERACTION_PRESET_REQUIREMENTS: Readonly<Record<InteractionPresetType, readonly InteractionCapability[]>> = {
+    'click-highlight': ['elements'],
+    'axis-highlight': ['discrete-axis'],
+    'click-group-focus': ['elements'],
+    'hover-group-focus': ['elements'],
+    'click-annotate': ['elements'],
+    'select': ['elements', 'region'],
+    'lasso-select': ['elements', 'region'],
+    'brush-x': ['elements', 'region'],
+    'brush-y': ['elements', 'region'],
+    'brush-angle': ['elements', 'angular-region'],
+    'brush-zoom': ['navigation'],
+    'linked-brush': ['elements', 'region'],
+    'legend-toggle': ['legend'],
+    'context-activate': ['elements'],
+    'long-press': ['elements'],
+    'double-activate': ['elements'],
+    'inspect': ['elements'],
+    'inspect-index': ['index'],
+    'navigate': ['navigation'],
+    'drag-reorder': ['reorder'],
+};
+
+/** The capabilities a chart type declares, before the assembler confirms the data-dependent ones. */
+export function declaredInteractionCapabilities(
+    support: ChartInteractionSupport | undefined,
+): InteractionCapability[] {
+    if (!support) return [];
+    const list: InteractionCapability[] = [];
+    if (support.elements) list.push('elements');
+    if (support.region?.length) list.push('region');
+    if (support.region?.includes('angular')) list.push('angular-region');
+    if (support.navigation) list.push('navigation');
+    if (support.reorder) list.push('reorder');
+    if (support.legend) list.push('legend');
+    if (support.discreteAxis) list.push('discrete-axis');
+    if (support.index) list.push('index');
+    return list;
+}
+
+/**
+ * The presets a chart type can honour by declaration. The data may still remove
+ * one at assemble time: a legend needs a bound discrete legend channel, and
+ * navigation needs a continuous unfaceted axis.
+ */
+export function supportedInteractionPresets(
+    support: ChartInteractionSupport | undefined,
+): InteractionPresetType[] {
+    const declared = new Set(declaredInteractionCapabilities(support));
+    return INTERACTION_PRESET_TYPES.filter((type) =>
+        INTERACTION_PRESET_REQUIREMENTS[type].every((capability) => declared.has(capability)));
+}
+
 /**
  * One preset as JSON: the type name, an optional id, and that preset's options
  * under `options`, for example

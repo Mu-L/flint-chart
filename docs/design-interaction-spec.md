@@ -633,6 +633,13 @@ on the scatter family above. Every other card kept its status.
 
 ### Discovery
 
-`supportedInteractions(template)` lists the presets whose `requires` sits inside the
-template's declaration. `list_chart_types` and the generated chart reference report it, so
-the list an agent reads and the list the mount enforces come from one block.
+`INTERACTION_PRESET_REQUIREMENTS` (core) is the one table of what each preset needs; the
+registry reads it. `declaredInteractionCapabilities(block)` and
+`supportedInteractionPresets(block)` (core) turn a template's declaration into the list of
+presets it can honour, before the data confirms the data-dependent ones. The Interactions lab
+gained a **Coverage** tab (`playground/interaction-coverage`): every chart type against every
+preset, with a filled dot where the representative test case activates the preset, a hollow dot
+where the chart type supports it but this case's data lacks a property, and a small dot where
+the chart type never offers what the preset needs. `list_chart_types` and the generated chart
+reference report the same list, so the list an agent reads and the list the mount enforces come
+from one block.
