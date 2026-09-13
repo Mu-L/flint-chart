@@ -43,6 +43,12 @@ export const DOCUMENTATION_GROUPS: DocGroup[] = [
         file: '../../../docs/theme-spec.md',
       },
       {
+        slug: 'interaction-spec',
+        title: 'Using interactions',
+        description: 'List interaction presets in interaction_spec, set their reset gestures, and read what each chart type supports.',
+        file: '../../../docs/interaction-spec.md',
+      },
+      {
         slug: 'setup-flint-mcp',
         title: 'Set up Flint MCP',
         description:
