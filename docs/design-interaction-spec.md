@@ -540,3 +540,87 @@ survives as a deprecated code option that maps onto every interaction that reset
 
 Step 3 landed 2026-09-12: `dismiss` is gone from the spec and from the code options; the deprecated
 mapping was removed rather than kept, because no caller needed it.
+
+## 11. Stage A: admission per chart type
+
+Landed on `feat/interaction-admission` (2026-09-12). Before this stage, admission inferred
+support from the presence of `semanticInteractions` (true for all 36 Vega-Lite templates),
+the navigable axes, and the polar region flag. A probe over the first test case of nine chart
+types admitted `click-highlight`, `brush-x`, `select`, `legend-toggle`, `drag-reorder`,
+`axis-highlight`, and `inspect-index` on every one of them, KPI Card and Pie Chart included.
+The registry's `requires` was written but never read.
+
+### Design
+
+Three parts, each in one place:
+
+1. **A vocabulary of chart capabilities** (`InteractionCapability`, core): a fact some preset
+   reads at runtime. `elements` (marks resolve to data), `cartesian-region`, `angular-region`,
+   `navigation`, `reorder`, `legend`, `discrete-axis`, `index` (one x position reads every
+   series).
+2. **Per preset, `requires`** in the registry, now a list: the smallest set without which the
+   preset does nothing. Brushes need `elements` and a region; `brush-zoom` and `navigate` need
+   `navigation`; `legend-toggle` needs `legend`; `axis-highlight` needs `discrete-axis`;
+   `drag-reorder` needs `reorder`; `inspect-index` needs `index`; the click, hover, and inspect
+   presets need `elements`. Each wrapper stamps `preset` on its definition so a code-made
+   definition is checked the same way; a custom definition may state `requires` itself.
+3. **Per template, `interactions`** on `ChartTemplateDef`: one block that absorbed the former
+   `navigation` and `reorder` fields and the `supportedRegionGestures` entry of
+   `semanticInteractions`. An absent key means never. The assembler confirms the
+   data-dependent capabilities against the bound encodings and writes the active list into
+   `_interactionSemantics.capabilities`; admission requires every entry of a preset's
+   `requires` to be active. Conflict rules are unchanged.
+
+### The declarations
+
+Source: **T** = the template's own code (resolver, `legendFields`, reorder axes, navigation,
+mark geometry), **P** = the probe over the shipped test cases, **J** = judgment, listed below.
+
+| Chart type | elements | region | navigation | reorder | legend | discrete axis | index | Source |
+|---|---|---|---|---|---|---|---|---|
+| Scatter Plot, Regression, Connected Scatter Plot | ✓ | cartesian | x, y | | ✓ | | | T, P |
+| Ranged Dot Plot | ✓ | cartesian | x, y | connective marks | ✓ | ✓ | | T |
+| Boxplot, Strip Plot | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | | T, P |
+| Bar, Grouped Bar, Stacked Bar, Lollipop | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | | T, P |
+| Waterfall Chart | ✓ | cartesian | x, y | rect marks | ✓ | ✓ | | T |
+| Pyramid Chart | ✓ | cartesian | | ✓ | ✓ | ✓ | | T, P |
+| Gantt Chart | ✓ | cartesian | x | ✓ | ✓ | ✓ | | T, P |
+| Bullet Chart, Bar Table | ✓ | cartesian | | ✓ | ✓ | ✓ | | T, P, J |
+| Histogram | ✓ | cartesian | x, y | | ✓ | | | T |
+| Heatmap | ✓ | cartesian | x, y | ✓ | | ✓ | | T, J |
+| Calendar Heatmap | ✓ | cartesian | | | | | | T, J |
+| Violin Plot | ✓ | cartesian | | | | ✓ | | T |
+| Density Plot, ECDF Plot | ✓ | cartesian | x | | ✓ | | ✓ | T, J |
+| Candlestick Chart | ✓ | cartesian | x | | | | ✓ | T, J |
+| Sparkline | ✓ | cartesian | x | | | | ✓ | T, J |
+| Line Chart | ✓ | cartesian | x, y | ✓ | ✓ | | ✓ | T, P, J |
+| Area Chart, Streamgraph, Range Area Chart | ✓ | cartesian | x, y | | ✓ | | ✓ | T, J |
+| Bump Chart, Slope Chart | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | ✓ | T, P, J |
+| Pie Chart, Donut Chart, Rose Chart, Radar Chart | ✓ | angular | | | ✓ | | | T |
+| KPI Card | ✓ | | | | | | | T, J |
+| Map, Choropleth | ✓ | cartesian | geo | | ✓ | | | T, J |
+
+Judgment calls, open for review:
+
+- **`elements` on KPI Card.** The template ships a resolver (`kpi-tile`) and an annotation
+  presenter, so `click-highlight` and `click-annotate` work on the tile. Declared, although
+  §9 once guessed "supports nothing".
+- **`legend` absent on Heatmap and Calendar Heatmap.** Their colour is continuous by
+  definition, so there are no legend items to toggle. Choropleth keeps `legend` because its
+  colour can be categorical; the assembler admits `legend-toggle` only when it is.
+- **`region: cartesian` kept on Bar Table, Bullet, Sparkline, Calendar Heatmap, Map,
+  Choropleth.** The region controller resolves marks by pixel bounds, so a rectangle over
+  rows, cells, or bubbles selects them. Only KPI Card and the polar charts lose it.
+- **`reorder` kept on Line, Bump, and Slope.** A nominal x axis on these charts was
+  reorderable before this stage (a test asserts it for Line Chart), so the behaviour is kept.
+- **`discreteAxis` absent on Rose, Range Area, Sparkline, and the continuous-x charts.**
+  `axis-highlight` emphasises the marks of one category label; on these charts the x labels are
+  periods or bins rather than categories a reader would pick.
+- **`index`** on the charts whose x is a shared index across series: line, area, streamgraph,
+  range area, bump, slope, density, ECDF, candlestick, sparkline.
+
+### Discovery
+
+`supportedInteractions(template)` lists the presets whose `requires` sits inside the
+template's declaration. `list_chart_types` and the generated chart reference report it, so
+the list an agent reads and the list the mount enforces come from one block.

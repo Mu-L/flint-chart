@@ -884,11 +884,12 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
     const unfaceted = !resolvedEncodings.column?.field && !resolvedEncodings.row?.field;
     // A projected chart navigates its projection extent, so both axes move
     // together and no continuous x/y encoding is required.
-    const geoNavigation = !!chartTemplate.navigation?.geo && unfaceted;
+    const support = chartTemplate.interactions;
+    const geoNavigation = !!support?.navigation?.geo && unfaceted;
     const navigationAxes: ('x' | 'y')[] = geoNavigation
         ? ['x', 'y']
-        : chartTemplate.navigation && unfaceted
-            ? (chartTemplate.navigation.axes ?? ['x', 'y']).filter((axis) => {
+        : support?.navigation && unfaceted
+            ? (support.navigation.axes ?? ['x', 'y']).filter((axis) => {
                 const encoding = resolvedEncodings[axis];
                 return !!encoding?.field && (encoding.type === 'quantitative' || encoding.type === 'temporal');
             })
@@ -912,9 +913,10 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
         const temporalProvenanceFields = [...new Set(semanticEncodings
             .filter((encoding) => encoding.type === 'temporal')
             .map((encoding) => encoding.field as string))];
-        const allowedReorderAxes: readonly ('x' | 'y')[] = chartTemplate.reorder === false
-            ? []
-            : chartTemplate.reorder?.axes ?? ['x', 'y'];
+        const reorderSupport = support?.reorder;
+        const allowedReorderAxes: readonly ('x' | 'y')[] = reorderSupport
+            ? reorderSupport.axes ?? ['x', 'y']
+            : [];
         const defaultReorderAxes = allowedReorderAxes.length > 0
             && !resolvedEncodings.column?.field && !resolvedEncodings.row?.field
             ? (['x', 'y'] as const).flatMap((axis) => {
@@ -924,12 +926,8 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
                     ? [{
                         axis,
                         field: encoding.field,
-                        ...(chartTemplate.reorder && chartTemplate.reorder.includeConnectiveMarks
-                            ? { includeConnectiveMarks: true }
-                            : {}),
-                        ...(chartTemplate.reorder && chartTemplate.reorder.markTypes
-                            ? { markTypes: chartTemplate.reorder.markTypes }
-                            : {}),
+                        ...(reorderSupport?.includeConnectiveMarks ? { includeConnectiveMarks: true } : {}),
+                        ...(reorderSupport?.markTypes ? { markTypes: reorderSupport.markTypes } : {}),
                     }]
                     : [];
             })
@@ -948,6 +946,7 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
             ) === index);
         result._interactionSemantics = {
             ...templateSemantics,
+            supportedRegionGestures: support?.region ? [...support.region] : undefined,
             axisFields: Object.fromEntries((['x', 'y'] as const).flatMap((axis) => {
                 const encoding = resolvedEncodings[axis];
                 return encoding?.field

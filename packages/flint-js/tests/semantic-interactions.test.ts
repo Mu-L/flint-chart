@@ -1939,9 +1939,12 @@ describe('Vega-Lite semantic interactions', () => {
             mark: 'arc',
             data: { values: [{ category: 'A', value: 1 }] },
             encoding: { theta: { field: 'value', type: 'quantitative' }, color: { field: 'category', type: 'nominal' } },
-            _interactionSemantics: roseChartDef.semanticInteractions!({
-                resolvedEncodings: { x: { field: 'category', type: 'nominal' }, y: { field: 'value', type: 'quantitative' } },
-            }),
+            _interactionSemantics: {
+                ...roseChartDef.semanticInteractions!({
+                    resolvedEncodings: { x: { field: 'category', type: 'nominal' }, y: { field: 'value', type: 'quantitative' } },
+                }),
+                supportedRegionGestures: [...roseChartDef.interactions!.region!],
+            },
         };
         const polarPlan = addVegaLiteInteractions(polar, [brushX()]);
         expect(polarPlan?.angularXBrush).toBe(true);
@@ -1954,13 +1957,16 @@ describe('Vega-Lite semantic interactions', () => {
                 y: { field: 'value', type: 'quantitative' },
                 color: { field: 'series', type: 'nominal' },
             },
-            _interactionSemantics: radarChartDef.semanticInteractions!({
-                resolvedEncodings: {
-                    x: { field: 'metric', type: 'nominal' },
-                    y: { field: 'value', type: 'quantitative' },
-                    color: { field: 'series', type: 'nominal' },
-                },
-            }),
+            _interactionSemantics: {
+                ...radarChartDef.semanticInteractions!({
+                    resolvedEncodings: {
+                        x: { field: 'metric', type: 'nominal' },
+                        y: { field: 'value', type: 'quantitative' },
+                        color: { field: 'series', type: 'nominal' },
+                    },
+                }),
+                supportedRegionGestures: [...radarChartDef.interactions!.region!],
+            },
         };
         expect(addVegaLiteInteractions(radar, [brushAngle()])?.angularXBrush).toBe(true);
     });

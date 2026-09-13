@@ -50,7 +50,12 @@ export const scatterPlotDef: ChartTemplateDef = {
     chart: "Scatter Plot",
     template: { mark: "circle", encoding: {} },
     channels: ["x", "y", "color", "size", "shape", "detail", "opacity", "column", "row"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        legend: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const seriesField = firstDiscreteEncodingField(resolvedEncodings, ['color']);
@@ -130,7 +135,12 @@ export const regressionDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "y", "size", "color", "column", "row"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        legend: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const seriesField = firstDiscreteEncodingField(resolvedEncodings, ['color']);
@@ -231,7 +241,6 @@ export const regressionDef: ChartTemplateDef = {
 
 export const rangedDotPlotDef: ChartTemplateDef = {
     chart: "Ranged Dot Plot",
-    reorder: { includeConnectiveMarks: true },
     template: {
         encoding: {},
         layer: [
@@ -240,7 +249,14 @@ export const rangedDotPlotDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "y", "color"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        reorder: { includeConnectiveMarks: true },
+        legend: true,
+        discreteAxis: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const categoryField = firstDiscreteEncodingField(resolvedEncodings, ['x', 'y']);
@@ -310,7 +326,14 @@ export const boxplotDef: ChartTemplateDef = {
     chart: "Boxplot",
     template: { mark: "boxplot", encoding: {} },
     channels: ["x", "y", "color", "opacity", "column", "row"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        reorder: {},
+        legend: true,
+        discreteAxis: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const categoryField = firstDiscreteEncodingField(resolvedEncodings, ['x', 'y']);

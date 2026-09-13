@@ -133,7 +133,13 @@ export const areaChartDef: ChartTemplateDef = {
     chart: "Area Chart",
     template: { mark: "area", encoding: {} },
     channels: ["x", "y", "color", "opacity", "column", "row"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        legend: true,
+        index: true,
+    },
     markCognitiveChannel: 'area',
     geometryKinds: ['area', 'line', 'point'],
     semanticInteractions: ({ resolvedEncodings }) => {
@@ -216,7 +222,13 @@ export const streamgraphDef: ChartTemplateDef = {
     chart: "Streamgraph",
     template: { mark: "area", encoding: {} },
     channels: ["x", "y", "color", "column", "row"],
-    navigation: {},
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: {},
+        legend: true,
+        index: true,
+    },
     markCognitiveChannel: 'area',
     semanticInteractions: ({ resolvedEncodings }) => {
         const seriesField = firstDiscreteEncodingField(resolvedEncodings, ['color']);

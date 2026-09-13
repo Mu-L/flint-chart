@@ -66,7 +66,13 @@ export const ecdfPlotDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ['x', 'color', 'detail', 'column', 'row'],
-    navigation: { axes: ['x'] },
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: { axes: ['x'] },
+        legend: true,
+        index: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const valueField = resolvedEncodings.x?.field;

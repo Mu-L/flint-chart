@@ -105,6 +105,10 @@ export const vlCalendarHeatmapDef: ChartTemplateDef = {
     chart: 'Calendar Heatmap',
     template: { mark: { type: 'rect', cornerRadius: 2 }, encoding: {} },
     channels: ['x', 'color'],
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+    },
     markCognitiveChannel: 'color',
     semanticInteractions: ({ resolvedEncodings }) => {
         const valueField = resolvedEncodings.color?.field ?? COUNT_FIELD;

@@ -116,7 +116,12 @@ export const sparklineDef: ChartTemplateDef = {
     chart: 'Sparkline',
     template: { mark: 'line', encoding: {} },
     channels: ['x', 'y', 'color', 'detail', 'row', 'column'],
-    navigation: { axes: ['x'] },
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: { axes: ['x'] },
+        index: true,
+    },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {
         const seriesField = firstDiscreteEncodingField(resolvedEncodings, ['row', 'color', 'detail']);

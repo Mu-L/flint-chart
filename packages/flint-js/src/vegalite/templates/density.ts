@@ -72,7 +72,13 @@ export const densityPlotDef: ChartTemplateDef = {
         },
     },
     channels: ["x", "color", "column", "row"],
-    navigation: { axes: ['x'] },
+    interactions: {
+        elements: true,
+        region: ['cartesian'],
+        navigation: { axes: ['x'] },
+        legend: true,
+        index: true,
+    },
     markCognitiveChannel: 'area',
     semanticInteractions: ({ resolvedEncodings }) => {
         const groupFields = ['color', 'column', 'row']
