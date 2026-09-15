@@ -202,6 +202,7 @@ export { isRegistered, getRegisteredTypes } from './type-registry';
 export {
     INTERACTION_PRESET_TYPES,
     INTERACTION_CAPABILITIES,
+    INTERACTION_CAPABILITY_DESCRIPTIONS,
     INTERACTION_PRESET_REQUIREMENTS,
     declaredInteractionCapabilities,
     supportedInteractionPresets,

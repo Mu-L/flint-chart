@@ -145,7 +145,7 @@ interface InteractionSpec {
 }
 ```
 
-`buildInteractiveChart()` 读取它，装配器忽略它。图表类型无法支持的条目会以 `unsupported_interaction` 警告被丢弃；`validateChart` 在渲染前报告同样的警告。`supportedInteractionPresets(def.interactions)` 列出模板按声明支持的预设。参见[使用交互](/documentation/interaction-spec)。
+`buildInteractiveChart()` 读取它，装配器忽略它。图表类型无法支持的条目会以 `unsupported_interaction` 警告被丢弃；`validateChart` 在渲染前报告同样的警告。`supportedInteractionPresets(def.interactionSupport)` 列出模板按声明支持的预设。参见[使用交互](/documentation/interaction-spec)。
 
 ### `chart_spec`
 

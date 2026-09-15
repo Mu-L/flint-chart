@@ -49,7 +49,7 @@ const SUPPORTED_SPEC_MARKS = new Set(['arc', 'area', 'bar', 'boxplot', 'circle',
 
 interface TemplateInteractionSemantics {
     chartType?: string;
-    capabilities?: readonly InteractionCapability[];
+    capabilities: readonly InteractionCapability[];
     fields: string[];
     sourceRecords?: readonly Record<string, unknown>[];
     provenanceFields?: readonly string[];
@@ -63,7 +63,6 @@ interface TemplateInteractionSemantics {
     rangeLegendChannels?: readonly string[];
     selectableMarks: string[];
     annotationMarkType?: string;
-    supportedRegionGestures?: ('cartesian' | 'angular')[];
     navigationAxes?: ('x' | 'y')[];
     geoNavigation?: boolean;
     geoLevels?: GeoLevelConfig;
@@ -495,7 +494,7 @@ export function addVegaLiteInteractions(
         geoNavigation: templateSemantics.geoNavigation ?? false,
         geoLevels: templateSemantics.geoLevels,
         geoPreProjection: templateSemantics.geoPreProjection,
-        angularXBrush: templateSemantics.supportedRegionGestures?.includes('angular') ?? false,
+        angularXBrush: templateSemantics.capabilities?.includes('angular-region') ?? false,
         reorderAxis: hasElementDrag && declaredReorderAxes[0]
             ? { ...declaredReorderAxes[0], scale: '', signal: '' }
             : undefined,

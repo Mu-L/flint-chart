@@ -99,7 +99,7 @@ function previewCanvasSize(viewport?: { width: number; height?: number }): { wid
   return { width, height };
 }
 
-function withAppPreviewDefaults(
+export function withAppPreviewDefaults(
   input: ChartAssemblyInput,
   viewport?: { width: number; height?: number },
 ): ChartAssemblyInput {
@@ -211,14 +211,6 @@ export function assemblePreviewSpec(
   const spec = assembleVegaLite(previewInput) as Record<string, unknown>;
   if (usePreviewDefaults) widenSmallStepPlotsForPreview(spec, previewInput, previewCanvasSize(viewport));
   return spec;
-}
-
-/** The input the preview assembles: the same sizing the static render uses, for an interactive mount. */
-export function previewAssemblyInput(
-  input: ChartAssemblyInput,
-  viewport?: { width: number; height?: number },
-): ChartAssemblyInput {
-  return withAppPreviewDefaults(input, viewport);
 }
 
 /**

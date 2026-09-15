@@ -62,7 +62,7 @@ export const kpiCardDef: ChartTemplateDef = {
     chart: "KPI Card",
     template: { layer: [] },
     channels: ["metric", "value", "goal"],
-    interactions: {
+    interactionSupport: {
         elements: true,
     },
     markCognitiveChannel: 'position',

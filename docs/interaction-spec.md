@@ -45,11 +45,11 @@ An entry has no string shorthand: `"click-highlight"` alone is rejected, `{ "typ
 | `double-activate` | Double-clicks a mark to activate it. | elements | click-none, escape |
 | `inspect` | Moves over the plot to read the nearest mark's values. | elements | none |
 | `inspect-index` | Moves over the plot to read every series at one x position (`seriesBy` for a single series). | index axis | escape |
-| `select` | Drags a rectangle to emphasise the marks inside. | elements, region | click-none, escape |
-| `lasso-select` | Draws a freehand region to emphasise the marks inside. | elements, region | click-none, escape |
-| `brush-x`, `brush-y` | Drags an interval along one axis; on a polar chart the x brush is an angular sector. | elements, region | click-none, escape |
+| `select` | Drags a rectangle to emphasise the marks inside. | elements, cartesian region | click-none, escape |
+| `lasso-select` | Draws a freehand region to emphasise the marks inside. | elements, cartesian region | click-none, escape |
+| `brush-x`, `brush-y` | Drags an interval along one axis; on a polar chart the x brush is an angular sector. | elements, cartesian region | click-none, escape |
 | `brush-angle` | Drags an angular sector on a pie, donut, rose, or radar chart. | elements, angular region | click-none, escape |
-| `linked-brush` | Brushes marks to highlight the same groups elsewhere (`groupBy` required). | elements, region | click-none, escape |
+| `linked-brush` | Brushes marks to highlight the same groups elsewhere (`groupBy` required). | elements, cartesian region | click-none, escape |
 | `brush-zoom` | Drags a rectangle to zoom into it. | navigation | double-click, escape |
 | `navigate` | Drags to pan and scrolls or pinches to zoom continuous axes (`axes`, `pan`, `domainGuard`). | navigation | double-click |
 | `legend-toggle` | Clicks a legend item to hide or restore its series. | discrete legend | none |

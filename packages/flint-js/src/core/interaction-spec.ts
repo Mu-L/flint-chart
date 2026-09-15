@@ -39,12 +39,13 @@ export type InteractionPresetType = (typeof INTERACTION_PRESET_TYPES)[number];
 
 /**
  * A fact about a chart that at least one interaction preset reads at runtime.
- * `region` is any drag region the plot resolves marks in; `angular-region` is
- * the polar kind, which only the angular brush needs.
+ * `cartesian-region` is a rectangle, interval, or lasso drag the plot resolves marks in;
+ * `angular-region` is a sector drag, which only the angular brush needs. A polar chart
+ * offers both: its interval brush is honoured as a sector.
  */
 export const INTERACTION_CAPABILITIES = [
     'elements',
-    'region',
+    'cartesian-region',
     'angular-region',
     'navigation',
     'reorder',
@@ -55,9 +56,21 @@ export const INTERACTION_CAPABILITIES = [
 
 export type InteractionCapability = (typeof INTERACTION_CAPABILITIES)[number];
 
+/** What each capability is, in the words a warning or a tooltip uses. */
+export const INTERACTION_CAPABILITY_DESCRIPTIONS: Readonly<Record<InteractionCapability, string>> = {
+    'elements': 'marks that resolve to data',
+    'cartesian-region': 'a plot to drag a region on',
+    'angular-region': 'a polar chart with an angular region',
+    'navigation': 'a navigable continuous axis',
+    'reorder': 'a discrete axis whose order can change',
+    'legend': 'a discrete legend',
+    'discrete-axis': 'a discrete axis with category labels',
+    'index': 'an index axis shared by the series',
+};
+
 /**
  * What a chart type offers to interaction presets, declared on
- * `ChartTemplateDef.interactions`. An absent key means the chart type never
+ * `ChartTemplateDef.interactionSupport`. An absent key means the chart type never
  * offers that capability. The assembler confirms the data-dependent ones
  * against the encodings: a legend needs a bound discrete legend channel,
  * navigation needs a continuous unfaceted axis, reorder needs a discrete axis.
@@ -90,13 +103,13 @@ export const INTERACTION_PRESET_REQUIREMENTS: Readonly<Record<InteractionPresetT
     'click-group-focus': ['elements'],
     'hover-group-focus': ['elements'],
     'click-annotate': ['elements'],
-    'select': ['elements', 'region'],
-    'lasso-select': ['elements', 'region'],
-    'brush-x': ['elements', 'region'],
-    'brush-y': ['elements', 'region'],
+    'select': ['elements', 'cartesian-region'],
+    'lasso-select': ['elements', 'cartesian-region'],
+    'brush-x': ['elements', 'cartesian-region'],
+    'brush-y': ['elements', 'cartesian-region'],
     'brush-angle': ['elements', 'angular-region'],
     'brush-zoom': ['navigation'],
-    'linked-brush': ['elements', 'region'],
+    'linked-brush': ['elements', 'cartesian-region'],
     'legend-toggle': ['legend'],
     'context-activate': ['elements'],
     'long-press': ['elements'],
@@ -114,7 +127,7 @@ export function declaredInteractionCapabilities(
     if (!support) return [];
     const list: InteractionCapability[] = [];
     if (support.elements) list.push('elements');
-    if (support.region?.length) list.push('region');
+    if (support.region?.includes('cartesian')) list.push('cartesian-region');
     if (support.region?.includes('angular')) list.push('angular-region');
     if (support.navigation) list.push('navigation');
     if (support.reorder) list.push('reorder');

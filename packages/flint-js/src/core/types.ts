@@ -908,7 +908,7 @@ export interface ChartTemplateDef {
      * the discrete axis labels, the index axis. Absent means the chart type
      * supports no interaction.
      */
-    interactions?: ChartInteractionSupport;
+    interactionSupport?: ChartInteractionSupport;
 
     /**
      * How the primary mark encodes its quantitative value.

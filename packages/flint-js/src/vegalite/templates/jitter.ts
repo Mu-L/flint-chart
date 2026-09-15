@@ -20,7 +20,7 @@ export const stripPlotDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["x", "y", "color", "size", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

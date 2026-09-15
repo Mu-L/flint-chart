@@ -45,11 +45,11 @@
 | `double-activate` | 双击标记以激活。 | 元素 | click-none, escape |
 | `inspect` | 在绘图区移动，读取最近标记的值。 | 元素 | 无 |
 | `inspect-index` | 在绘图区移动，读取同一 x 位置上所有系列的值（`seriesBy` 指定单个系列）。 | 索引轴 | escape |
-| `select` | 拖出矩形以强调其中的标记。 | 元素、区域 | click-none, escape |
-| `lasso-select` | 自由绘制区域以强调其中的标记。 | 元素、区域 | click-none, escape |
-| `brush-x`、`brush-y` | 沿一条轴拖出区间；在极坐标图上，x 刷选是一个角度扇区。 | 元素、区域 | click-none, escape |
+| `select` | 拖出矩形以强调其中的标记。 | 元素、直角坐标区域 | click-none, escape |
+| `lasso-select` | 自由绘制区域以强调其中的标记。 | 元素、直角坐标区域 | click-none, escape |
+| `brush-x`、`brush-y` | 沿一条轴拖出区间；在极坐标图上，x 刷选是一个角度扇区。 | 元素、直角坐标区域 | click-none, escape |
 | `brush-angle` | 在饼图、环图、玫瑰图或雷达图上拖出角度扇区。 | 元素、角度区域 | click-none, escape |
-| `linked-brush` | 刷选标记，在其他视图中高亮相同的组（必须提供 `groupBy`）。 | 元素、区域 | click-none, escape |
+| `linked-brush` | 刷选标记，在其他视图中高亮相同的组（必须提供 `groupBy`）。 | 元素、直角坐标区域 | click-none, escape |
 | `brush-zoom` | 拖出矩形并放大到该范围。 | 导航 | double-click, escape |
 | `navigate` | 拖动平移、滚轮或双指缩放连续坐标轴（`axes`、`pan`、`domainGuard`）。 | 导航 | double-click |
 | `legend-toggle` | 点击图例项以隐藏或恢复其系列。 | 离散图例 | 无 |

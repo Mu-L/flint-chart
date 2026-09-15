@@ -148,7 +148,7 @@ export const violinPlotDef: ChartTemplateDef = {
     // `column` is consumed internally for the per-category panels; only `row`
     // is exposed as an additional outer facet.
     channels: ['x', 'y', 'color', 'row'],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         discreteAxis: true,

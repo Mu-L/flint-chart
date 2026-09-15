@@ -50,7 +50,7 @@ export const scatterPlotDef: ChartTemplateDef = {
     chart: "Scatter Plot",
     template: { mark: "circle", encoding: {} },
     channels: ["x", "y", "color", "size", "shape", "detail", "opacity", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -136,7 +136,7 @@ export const regressionDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "y", "size", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -251,7 +251,7 @@ export const rangedDotPlotDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "y", "color"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -328,7 +328,7 @@ export const boxplotDef: ChartTemplateDef = {
     chart: "Boxplot",
     template: { mark: "boxplot", encoding: {} },
     channels: ["x", "y", "color", "opacity", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

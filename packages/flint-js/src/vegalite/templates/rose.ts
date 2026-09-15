@@ -42,9 +42,9 @@ export const roseChartDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
-        region: ['angular'],
+        region: ['cartesian', 'angular'],
         legend: true,
     },
     markCognitiveChannel: 'area',

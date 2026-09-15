@@ -46,7 +46,7 @@ export const barTableDef: ChartTemplateDef = {
         config: { view: { stroke: null }, axis: { grid: false, domain: false, ticks: false } },
     },
     channels: ["y", "x", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         reorder: {},

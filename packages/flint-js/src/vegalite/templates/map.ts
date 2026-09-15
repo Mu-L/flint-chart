@@ -299,7 +299,7 @@ export const mapDef: ChartTemplateDef = {
         ],
     },
     channels: ["longitude", "latitude", "color", "size", "opacity"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { geo: true },
@@ -473,7 +473,7 @@ export const choroplethDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["id", "color", "detail"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { geo: true },

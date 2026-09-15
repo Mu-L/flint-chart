@@ -72,7 +72,7 @@ export const densityPlotDef: ChartTemplateDef = {
         },
     },
     channels: ["x", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },

@@ -8,7 +8,7 @@ import type {
 import type { InteractionEventSource, NavigationResetGesture } from './triggers';
 export type { NavigationResetGesture } from './triggers';
 import { NAVIGATION_RESET, NO_RESET, SELECTION_RESET, normalizeResetGestures, type InteractionResetGesture } from './reset';
-import type { InteractionCapability, InteractionPresetType } from '../core/interaction-spec';
+import type { InteractionPresetType } from '../core/interaction-spec';
 import type { InspectIndexShow, InspectMode } from './triggers';
 import type { InspectGuideOptions, RegionGuideOptions } from './guides';
 import type { InteractionAffordance } from './affordances';
@@ -106,8 +106,6 @@ export interface CanvasInteractionDef {
     readonly origin?: 'spec';
     /** The preset that made this definition; admission reads its requirements from the registry. */
     readonly preset?: InteractionPresetType;
-    /** Chart capabilities a custom definition needs; a preset carries them through the registry instead. */
-    readonly requires?: readonly InteractionCapability[];
     /** Gestures that return this interaction to its neutral state, normalised by the factory. Absent on presets that retain nothing. */
     readonly reset?: readonly InteractionResetGesture[];
     /** Drops state the preset keeps outside the chart's retained updates, when a reset gesture fires. */

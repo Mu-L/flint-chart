@@ -555,18 +555,19 @@ The registry's `requires` was written but never read.
 Three parts, each in one place:
 
 1. **A vocabulary of chart capabilities** (`InteractionCapability`, core): a fact some preset
-   reads at runtime. `elements` (marks resolve to data), `region` (any drag region the plot
-   resolves marks in), `angular-region` (the polar kind), `navigation`, `reorder`, `legend`,
-   `discrete-axis`, `index` (one x position reads every series). `brush-x` on a polar chart is
-   honoured as an angular brush, which is why the brushes need a region of either kind and only
-   `brush-angle` needs the angular one.
-2. **Per preset, `requires`** in the registry, now a list: the smallest set without which the
+   reads at runtime. `elements` (marks resolve to data), `cartesian-region` (a rectangle,
+   interval, or lasso drag the plot resolves marks in), `angular-region` (a sector drag),
+   `navigation`, `reorder`, `legend`, `discrete-axis`, `index` (one x position reads every
+   series). A polar chart declares both regions: a rectangle or lasso resolves its arcs by
+   pixel bounds, and `brush-x` on it is honoured as an angular brush. Only `brush-angle` needs
+   the angular one.
+2. **Per preset, `INTERACTION_PRESET_REQUIREMENTS`** in core, one list per preset: the smallest set without which the
    preset does nothing. Brushes need `elements` and a region; `brush-zoom` and `navigate` need
    `navigation`; `legend-toggle` needs `legend`; `axis-highlight` needs `discrete-axis`;
    `drag-reorder` needs `reorder`; `inspect-index` needs `index`; the click, hover, and inspect
    presets need `elements`. Each wrapper stamps `preset` on its definition so a code-made
-   definition is checked the same way; a custom definition may state `requires` itself.
-3. **Per template, `interactions`** on `ChartTemplateDef`: one block that absorbed the former
+   definition is checked the same way; a definition made by hand needs nothing.
+3. **Per template, `interactionSupport`** on `ChartTemplateDef`: one block that absorbed the former
    `navigation` and `reorder` fields and the `supportedRegionGestures` entry of
    `semanticInteractions`. An absent key means never. The assembler confirms the
    data-dependent capabilities against the bound encodings and writes the active list into
@@ -599,7 +600,7 @@ mark geometry), **P** = the probe over the shipped test cases, **J** = judgment,
 | Line Chart | ✓ | cartesian | x, y | ✓ | ✓ | | ✓ | T, P, J |
 | Area Chart, Streamgraph, Range Area Chart | ✓ | cartesian | x, y | | ✓ | | ✓ | T, J |
 | Bump Chart, Slope Chart | ✓ | cartesian | x, y | ✓ | ✓ | ✓ | ✓ | T, P, J |
-| Pie Chart, Donut Chart, Rose Chart, Radar Chart | ✓ | angular | | | ✓ | | | T |
+| Pie Chart, Donut Chart, Rose Chart, Radar Chart | ✓ | cartesian, angular | | | ✓ | | | T |
 | KPI Card | ✓ | | | | | | | T, J |
 | Map, Choropleth | ✓ | cartesian | geo | | ✓ | | | T, J |
 
@@ -643,3 +644,53 @@ where the chart type supports it but this case's data lacks a property, and a sm
 the chart type never offers what the preset needs. `list_chart_types` and the generated chart
 reference report the same list, so the list an agent reads and the list the mount enforces come
 from one block.
+
+## 12. Stages B and C (landed 2026-09-12), and what waits
+
+**Stage B, validation and discovery.** `validateChart()` checks `interaction_spec` the way
+the mount does (`validateInteractionSpec`): a malformed spec is an `invalid_interaction_spec`
+error, a dropped entry is the same `unsupported_interaction` warning the surface reports, and
+a static backend reports the spec as ignored. The MCP tool schema carries `interaction_spec`
+with the preset names as an enum; `validate_chart` reports the drops; `list_chart_types`
+returns `interactions` per chart type from the template declaration. Docs: `interaction-spec.md`
+(en, zh-CN), the API reference, the chart-author skill, and an **Interactions** line per chart
+type in the generated Vega-Lite reference.
+
+**Stage C, hosts.** The MCP chart view mounts `buildInteractiveChart()` with the CSP-safe
+expression interpreter when the input lists interactions, on the same preview input the
+static render sizes; the static render keeps running for the PNG export. The site gained one
+spec-aware component, `InteractiveVegaLiteView`, used by the editor and by `TripleChart`
+whenever the input carries interaction entries; a `TestCase` may carry an `interactionSpec`.
+The index chart stage and the chart-to-external lab, the two demos that used presets only,
+now ask for them in `interaction_spec`. Demos with custom definitions stay in code.
+
+**Review of Stage A (2026-09-14 to 15).** The template block is `interactionSupport`; the
+drag-region capability is `cartesian-region`, and the polar templates declare both regions;
+the assembler is the one authority on a chart's capabilities, and the gates that replayed the
+old inferred rules are gone; `capabilities` is a required field of the admission plan, and the
+assembler writes `_interactionSemantics` for every Vega-Lite chart, so the validator and the
+mount read one object and never disagree; the coverage tab pins its header and marks
+unsupported cells with a cross.
+
+### Future steps, not started
+
+Considered and set aside on 2026-09-15 as not needed yet. Each is small and self-contained.
+
+- **A `text` template for `click-annotate`**, so a spec can word the annotation without the
+  `format` function: `{ "options": { "text": "{Country}: {Value}" } }`, filled from the element's
+  value and its first record.
+- **An `external-select` preset**, a definition with no gesture that a host drives through
+  `surface.dispatch(id, { values })`, emitting a `set-style` over `select.key` targets so a linked
+  view can emphasise rows without code. It would require `elements` and have no reset, and the
+  resolver would then return `InteractionDef[]`.
+- **Gesture guide ink from the theme**: `interaction.gestureGuide.color` in `theme_spec`,
+  grounded to the accent then the text ink, carried on the plan, and applied where a preset's
+  guide style names no colour. The triggers would keep their raw guide options so the runtime
+  can normalise them with the ink.
+- **An interaction-author skill** beside the chart-author and theme-author skills, holding
+  every preset's options, the reset gestures, the support table, the conflict rules, and
+  worked examples; the preset blocks generated from the registry.
+- **Named interaction bundles**, a string form of `interaction_spec` such as `"explore"`, parallel
+  to `theme_spec: "economist"`.
+- **`surface.setInteractionSpec(spec)`**, to change a mounted chart's behaviour without a
+  rebuild.

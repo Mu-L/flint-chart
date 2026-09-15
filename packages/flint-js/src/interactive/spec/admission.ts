@@ -1,19 +1,18 @@
 import type { ChartWarning } from '../../core/types';
-import type { InteractionCapability } from '../../core/interaction-spec';
+import {
+    INTERACTION_CAPABILITY_DESCRIPTIONS,
+    INTERACTION_PRESET_REQUIREMENTS,
+    type InteractionCapability,
+} from '../../core/interaction-spec';
 import type { CanvasInteractionDef } from '../interactions';
 import type { NavigationAxes } from '../language/events';
-import { INTERACTION_PRESETS } from './registry';
 
 /** What admission reads from the compiled chart: the fields the assembler writes to `_interactionSemantics`. */
 export interface InteractionAdmissionPlan {
     readonly chartType?: string;
-    /** The capabilities the assembler confirmed for this chart and its data. A plan without them is read from the other fields. */
-    readonly capabilities?: readonly InteractionCapability[];
-    readonly fields: readonly string[];
-    readonly selectableMarks: readonly string[];
-    readonly resolve?: unknown;
+    /** The capabilities the assembler confirmed for this chart and its data. */
+    readonly capabilities: readonly InteractionCapability[];
     readonly navigationAxes?: readonly ('x' | 'y')[];
-    readonly supportedRegionGestures?: readonly ('cartesian' | 'angular')[];
 }
 
 export interface InteractionAdmission {
@@ -37,41 +36,9 @@ export function navigationAxesFor(
 const PAN_DRAG_CONFLICT = 'Pan navigation cannot share an unmodified drag gesture with a region interaction.';
 const DROPPED = 'The interaction was dropped.';
 
-const NEEDS: Readonly<Record<InteractionCapability, string>> = {
-    'elements': 'marks that resolve to data',
-    'region': 'a plot to drag a region on',
-    'angular-region': 'a polar chart with an angular region',
-    'navigation': 'a navigable continuous axis',
-    'reorder': 'a discrete axis whose order can change',
-    'legend': 'a discrete legend',
-    'discrete-axis': 'a discrete axis with category labels',
-    'index': 'an index axis shared by the series',
-};
-
-/**
- * A plan the assembler did not annotate is read the way the compile step read it:
- * element semantics, the angular flag, and the navigable axes decide; the other
- * capabilities are taken as present.
- */
-function inferredCapabilities(plan: InteractionAdmissionPlan): readonly InteractionCapability[] {
-    const list: InteractionCapability[] = ['legend', 'reorder', 'discrete-axis', 'index'];
-    if (!!plan.resolve || plan.fields.length > 0 || plan.selectableMarks.length > 0) list.push('elements', 'region');
-    if (plan.supportedRegionGestures?.includes('angular')) list.push('angular-region');
-    if ((plan.navigationAxes ?? []).length > 0) list.push('navigation');
-    return list;
-}
-
-/** A custom definition states its needs; a preset carries them through the registry; anything else is read off the event source. */
+/** A preset needs what the core table says; a definition made by hand needs nothing. */
 export function interactionRequirements(interaction: CanvasInteractionDef): readonly InteractionCapability[] {
-    if (interaction.requires) return interaction.requires;
-    if (interaction.preset) return INTERACTION_PRESETS[interaction.preset].requires;
-    const source = interaction.eventSource;
-    if (source.type === 'navigation') return ['navigation'];
-    if (source.type === 'region') {
-        return source.regionGeometry === 'angular' ? ['elements', 'angular-region'] : ['elements', 'region'];
-    }
-    if (source.type === 'element') return ['elements'];
-    return [];
+    return interaction.preset ? INTERACTION_PRESET_REQUIREMENTS[interaction.preset] : [];
 }
 
 /**
@@ -96,7 +63,7 @@ export function admitInteractions(
         warnings.push({ severity: 'warning', code, message: `${message} ${DROPPED}` });
         return false;
     };
-    const capabilities = new Set(plan.capabilities ?? inferredCapabilities(plan));
+    const capabilities = new Set(plan.capabilities);
     const chart = plan.chartType ?? 'this chart';
     const available = plan.navigationAxes ?? [];
 
@@ -105,7 +72,7 @@ export function admitInteractions(
         const missing = interactionRequirements(interaction).find((capability) => !capabilities.has(capability));
         if (missing) {
             return reject(interaction, 'unsupported_interaction',
-                `Interaction "${interaction.id}" requires ${NEEDS[missing]}; ${chart} has none.`);
+                `Interaction "${interaction.id}" requires ${INTERACTION_CAPABILITY_DESCRIPTIONS[missing]}; ${chart} has none.`);
         }
         const source = interaction.eventSource;
         if (source.type === 'navigation') {

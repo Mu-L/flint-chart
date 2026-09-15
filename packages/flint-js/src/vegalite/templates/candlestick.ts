@@ -16,7 +16,7 @@ export const candlestickChartDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "open", "high", "low", "close", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },

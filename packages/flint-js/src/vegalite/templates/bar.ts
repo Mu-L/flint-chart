@@ -171,7 +171,7 @@ export const barChartDef: ChartTemplateDef = {
     chart: "Bar Chart",
     template: { mark: "bar", encoding: {} },
     channels: ["x", "y", "color", "opacity", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -266,7 +266,7 @@ export const pyramidChartDef: ChartTemplateDef = {
         config: { view: { stroke: null }, axis: { grid: false } },
     },
     channels: ["x", "y", "color"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         reorder: {},
@@ -412,7 +412,7 @@ export const groupedBarChartDef: ChartTemplateDef = {
     chart: "Grouped Bar Chart",
     template: { mark: "bar", encoding: {} },
     channels: ["x", "y", "group", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -544,7 +544,7 @@ export const stackedBarChartDef: ChartTemplateDef = {
     chart: "Stacked Bar Chart",
     template: { mark: "bar", encoding: {} },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -637,7 +637,7 @@ export const histogramDef: ChartTemplateDef = {
         },
     },
     channels: ["x", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -717,7 +717,7 @@ export const heatmapDef: ChartTemplateDef = {
     chart: "Heatmap",
     template: { mark: "rect", encoding: {} },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

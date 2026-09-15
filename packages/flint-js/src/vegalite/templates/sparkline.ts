@@ -116,7 +116,7 @@ export const sparklineDef: ChartTemplateDef = {
     chart: 'Sparkline',
     template: { mark: 'line', encoding: {} },
     channels: ['x', 'y', 'color', 'detail', 'row', 'column'],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },

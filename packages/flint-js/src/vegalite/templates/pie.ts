@@ -20,9 +20,9 @@ export const pieChartDef: ChartTemplateDef = {
     chart: "Pie Chart",
     template: { mark: "arc", encoding: {} },
     channels: ["size", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
-        region: ['angular'],
+        region: ['cartesian', 'angular'],
         legend: true,
     },
     markCognitiveChannel: 'area',

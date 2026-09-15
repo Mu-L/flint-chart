@@ -71,7 +71,7 @@ export const connectedScatterDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["x", "y", "order", "color", "detail", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

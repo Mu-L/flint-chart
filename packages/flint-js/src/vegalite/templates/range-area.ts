@@ -50,7 +50,7 @@ export const rangeAreaChartDef: ChartTemplateDef = {
     chart: 'Range Area Chart',
     template: { mark: { type: 'area', opacity: 0.5, line: { strokeWidth: 1 } }, encoding: {} },
     channels: ['x', 'y', 'y2', 'color', 'column', 'row'],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

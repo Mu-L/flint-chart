@@ -51,7 +51,7 @@ export const bulletChartDef: ChartTemplateDef = {
         layer: [],
     },
     channels: ["y", "x", "goal", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         reorder: {},

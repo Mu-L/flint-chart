@@ -37,7 +37,7 @@ export const waterfallChartDef: ChartTemplateDef = {
     chart: "Waterfall Chart",
     template: { mark: "bar", encoding: {} },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

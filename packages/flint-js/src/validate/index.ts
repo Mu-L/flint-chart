@@ -323,10 +323,7 @@ export function validateInteractionSpec(
     }
     try {
         const resolved = resolveInteractionSpec(input.interaction_spec);
-        const semantics = (assembled as { _interactionSemantics?: unknown } | undefined)?._interactionSemantics;
-        const plan = semantics && typeof semantics === 'object'
-            ? semantics as Parameters<typeof admitInteractions>[0]
-            : { fields: [], selectableMarks: [] };
+        const { _interactionSemantics: plan } = assembled as { _interactionSemantics: Parameters<typeof admitInteractions>[0] };
         return [...admitInteractions(plan, resolved.interactions).warnings];
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

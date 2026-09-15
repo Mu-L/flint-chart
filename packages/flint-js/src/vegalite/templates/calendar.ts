@@ -105,7 +105,7 @@ export const vlCalendarHeatmapDef: ChartTemplateDef = {
     chart: 'Calendar Heatmap',
     template: { mark: { type: 'rect', cornerRadius: 2 }, encoding: {} },
     channels: ['x', 'color'],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
     },

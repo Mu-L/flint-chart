@@ -39,7 +39,7 @@ export const ganttChartDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["y", "x", "x2", "color", "detail", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },

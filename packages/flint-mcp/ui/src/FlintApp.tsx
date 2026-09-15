@@ -19,7 +19,7 @@ import { THEME_PRESETS, DEFAULT_THEME_ICON } from 'flint-chart';
 import { buildInteractiveChart } from 'flint-chart/interactive';
 import { expressionInterpreter } from 'vega-interpreter';
 
-import { previewAssemblyInput, renderFlintSvg, type FlintRenderResult } from './render';
+import { renderFlintSvg, withAppPreviewDefaults, type FlintRenderResult } from './render';
 import { chartIconFor } from './chart-icons';
 import {
   buildPanelModel,
@@ -881,16 +881,11 @@ export function FlintAppInner(props: {
 
   const interactive = (current.interaction_spec?.interactions?.length ?? 0) > 0;
   const previewInput = useMemo(
-    () => previewAssemblyInput(current, chartWidth ? { width: chartWidth } : undefined),
+    () => withAppPreviewDefaults(current, chartWidth ? { width: chartWidth } : undefined),
     [current, chartWidth],
   );
   const renderWarnings = render?.warnings ?? [];
-  const warnings = interactive
-    ? [
-      ...renderWarnings,
-      ...surfaceWarnings.filter((warning) => !renderWarnings.some((known) => known.message === warning.message)),
-    ]
-    : renderWarnings;
+  const warnings = interactive ? [...renderWarnings, ...surfaceWarnings] : renderWarnings;
   const shownError = error ?? (interactive ? surfaceError : null);
 
   return (
@@ -957,11 +952,7 @@ export function FlintAppInner(props: {
   );
 }
 
-/**
- * The live chart when the input carries interaction_spec: the same preview input
- * the static render sizes, mounted through the interactive surface. The static
- * render keeps running beside it for the PNG export and the assembler warnings.
- */
+/** The live chart when the input carries interaction_spec: the preview input, mounted through the interactive surface. */
 function InteractiveChart({
   input,
   onWarnings,

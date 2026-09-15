@@ -25,7 +25,7 @@ export const lollipopChartDef: ChartTemplateDef = {
         ],
     },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

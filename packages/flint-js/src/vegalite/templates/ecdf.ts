@@ -66,7 +66,7 @@ export const ecdfPlotDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ['x', 'color', 'detail', 'column', 'row'],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },

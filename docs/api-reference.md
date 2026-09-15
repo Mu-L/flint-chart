@@ -173,7 +173,7 @@ interface InteractionSpec {
 
 `buildInteractiveChart()` reads it; the assemblers ignore it. An entry the chart type
 cannot honour is dropped with an `unsupported_interaction` warning, and `validateChart`
-reports the same warnings before anything renders. `supportedInteractionPresets(def.interactions)`
+reports the same warnings before anything renders. `supportedInteractionPresets(def.interactionSupport)`
 lists the presets a template supports by declaration. See [Using interactions](/documentation/interaction-spec).
 
 ### `chart_spec`

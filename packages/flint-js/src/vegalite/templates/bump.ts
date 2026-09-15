@@ -25,7 +25,7 @@ export const bumpChartDef: ChartTemplateDef = {
         encoding: {},
     },
     channels: ["x", "y", "color", "detail", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

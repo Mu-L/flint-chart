@@ -133,7 +133,7 @@ export const areaChartDef: ChartTemplateDef = {
     chart: "Area Chart",
     template: { mark: "area", encoding: {} },
     channels: ["x", "y", "color", "opacity", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},
@@ -222,7 +222,7 @@ export const streamgraphDef: ChartTemplateDef = {
     chart: "Streamgraph",
     template: { mark: "area", encoding: {} },
     channels: ["x", "y", "color", "column", "row"],
-    interactions: {
+    interactionSupport: {
         elements: true,
         region: ['cartesian'],
         navigation: {},

@@ -52,7 +52,7 @@ export function listChartTypes(backend?: RenderBackend): BackendCatalog[] {
       .map((d) => ({
         chartType: d.chart,
         channels: d.channels ?? [],
-        interactions: supportedInteractionPresets(d.interactions),
+        interactions: supportedInteractionPresets(d.interactionSupport),
       }))
       .sort((a, b2) => a.chartType.localeCompare(b2.chartType));
     return { backend: b, count: chartTypes.length, chartTypes };

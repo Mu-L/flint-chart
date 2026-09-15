@@ -310,8 +310,8 @@ function renderChart(def: ChartTemplateDef): string {
     const channels = (def.channels ?? []).map((c) => `\`${c}\``).join(', ') || '_none_';
     lines.push(`**Encoding channels:** ${channels}`);
     lines.push('');
-    if (def.interactions) {
-        const presets = supportedInteractionPresets(def.interactions).map((type) => `\`${type}\``).join(', ') || '_none_';
+    if (def.interactionSupport) {
+        const presets = supportedInteractionPresets(def.interactionSupport).map((type) => `\`${type}\``).join(', ') || '_none_';
         lines.push(`**Interactions:** ${presets}`);
         lines.push('');
     }
@@ -410,8 +410,8 @@ function renderChartZh(def: ChartTemplateDef): string {
     lines.push(`### ${icon ? `![](${icon}) ` : ''}${def.chart}`, '');
     const channels = (def.channels ?? []).map((channel) => `\`${channel}\``).join(', ') || '_无_';
     lines.push(`**编码通道：** ${channels}`, '');
-    if (def.interactions) {
-        const presets = supportedInteractionPresets(def.interactions).map((type) => `\`${type}\``).join(', ') || '_无_';
+    if (def.interactionSupport) {
+        const presets = supportedInteractionPresets(def.interactionSupport).map((type) => `\`${type}\``).join(', ') || '_无_';
         lines.push(`**交互：** ${presets}`, '');
     }
     const props = def.properties ?? [];

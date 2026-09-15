@@ -7,15 +7,17 @@ import type { InteractionEntry } from '../src/core/interaction-spec';
 import { addVegaLiteInteractions } from '../src/vegalite/interactions/compile';
 import { assembleVegaLite } from '../src/vegalite/assemble';
 
-/** A Cartesian chart with element semantics and one navigable axis. */
+/** A Cartesian chart with elements, a region, a legend, and one navigable axis. */
 const CARTESIAN = {
-    fields: ['category'],
-    selectableMarks: ['bar'],
-    resolve: () => null,
+    capabilities: ['elements', 'cartesian-region', 'navigation', 'legend'] as const,
     navigationAxes: ['x'] as const,
-    supportedRegionGestures: ['cartesian'] as const,
 };
-const NO_SEMANTICS = { fields: [], selectableMarks: [] };
+/** The same chart with nothing to navigate. */
+const NO_NAVIGATION = {
+    capabilities: ['elements', 'cartesian-region', 'legend'] as const,
+    navigationAxes: [] as const,
+};
+const NO_SEMANTICS = { capabilities: [] as const };
 
 const fromSpec = (entries: readonly InteractionEntry[]): readonly CanvasInteractionDef[] =>
     resolveInteractionSpec({ interactions: entries }).interactions;
@@ -33,7 +35,7 @@ describe('admitInteractions', () => {
             .toThrow('Interaction "brush-angle" requires a polar chart with an angular region; this chart has none.');
         expect(() => admitInteractions(NO_SEMANTICS, [clickHighlight()]))
             .toThrow('Interaction "click-highlight" requires marks that resolve to data; this chart has none.');
-        expect(() => admitInteractions({ ...CARTESIAN, navigationAxes: [] }, [navigate()]))
+        expect(() => admitInteractions(NO_NAVIGATION, [navigate()]))
             .toThrow('Interaction "navigate" requires a navigable continuous axis; this chart has none.');
         expect(() => admitInteractions(CARTESIAN, [navigate({ axes: 'y' })]))
             .toThrow('Interaction "navigate" requested unsupported navigation axis: y.');
@@ -50,7 +52,7 @@ describe('admitInteractions', () => {
     });
 
     it('drops a spec navigate the chart cannot navigate', () => {
-        const none = admitInteractions({ ...CARTESIAN, navigationAxes: [] }, fromSpec([{ type: 'navigate' }]));
+        const none = admitInteractions(NO_NAVIGATION, fromSpec([{ type: 'navigate' }]));
         expect(none.admitted).toEqual([]);
         expect(none.warnings[0].message).toContain('requires a navigable continuous axis');
         const wrongAxis = admitInteractions(CARTESIAN, fromSpec([{ type: 'navigate', options: { axes: 'y' } }]));
@@ -162,9 +164,9 @@ describe('admission against the chart type declaration', () => {
     it('writes the confirmed capabilities and the chart type into the compiled semantics', () => {
         const bar = semanticsOf('Bar Chart', { x: 'category', y: 'value', color: 'region' });
         expect(bar.chartType).toBe('Bar Chart');
-        expect(bar.capabilities).toEqual(['elements', 'region', 'navigation', 'reorder', 'legend', 'discrete-axis']);
+        expect(bar.capabilities).toEqual(['elements', 'cartesian-region', 'navigation', 'reorder', 'legend', 'discrete-axis']);
         const pie = semanticsOf('Pie Chart', { theta: 'value', color: 'category' });
-        expect(pie.capabilities).toEqual(['elements', 'region', 'angular-region', 'legend']);
+        expect(pie.capabilities).toEqual(['elements', 'cartesian-region', 'angular-region', 'legend']);
         const kpi = semanticsOf('KPI Card', { metric: 'category', value: 'value' });
         expect(kpi.capabilities).toEqual(['elements']);
     });
@@ -211,10 +213,8 @@ describe('admission against the chart type declaration', () => {
             .toThrow('Interaction "brush-x" requires a plot to drag a region on; KPI Card has none.');
     });
 
-    it('a custom definition states its own requirements, and one without any is read from its event source', () => {
+    it('a definition made by hand needs nothing', () => {
         const kpi = semanticsOf('KPI Card', { metric: 'category', value: 'value' });
-        const custom: CanvasInteractionDef = { ...clickHighlight({ id: 'custom' }), preset: undefined, requires: ['legend'] };
-        expect(() => admitInteractions(kpi, [custom])).toThrow('Interaction "custom" requires a discrete legend; KPI Card has none.');
         const bare: CanvasInteractionDef = { ...clickHighlight({ id: 'bare' }), preset: undefined };
         expect(ids(admitInteractions(kpi, [bare]).admitted)).toEqual(['bare']);
     });

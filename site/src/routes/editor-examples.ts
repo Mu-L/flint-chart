@@ -28,22 +28,19 @@ export const EXAMPLES: Example[] = GALLERY_PICKS.flatMap(({ name, generator }) =
   return [{ name, input: testCaseToAssemblyInput(testCase) }];
 });
 
-// One example asks for behaviour, so the editor shows interaction_spec at work.
 const interactiveCase = TEST_GENERATORS['Gallery: Stacked Bar']?.()[0];
 if (interactiveCase) {
-  const { data, ...rest } = testCaseToAssemblyInput(interactiveCase);
   EXAMPLES.push({
     name: 'Interactive bar',
-    input: {
-      ...rest,
-      interaction_spec: {
+    input: testCaseToAssemblyInput({
+      ...interactiveCase,
+      interactionSpec: {
         interactions: [
           { type: 'click-highlight' },
           { type: 'legend-toggle' },
           { type: 'navigate', options: { axes: 'y', pan: false, reset: ['double-click', 'escape'] } },
         ],
       },
-      data,
-    },
+    }),
   });
 }
