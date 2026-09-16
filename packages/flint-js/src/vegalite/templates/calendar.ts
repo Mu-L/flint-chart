@@ -108,6 +108,9 @@ export const vlCalendarHeatmapDef: ChartTemplateDef = {
     interactionSupport: {
         elements: true,
         region: ['cartesian'],
+        reorder: {},
+        legend: true,
+        discreteAxis: true,
     },
     markCognitiveChannel: 'color',
     semanticInteractions: ({ resolvedEncodings }) => {

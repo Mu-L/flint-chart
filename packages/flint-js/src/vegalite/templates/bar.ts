@@ -641,7 +641,9 @@ export const histogramDef: ChartTemplateDef = {
         elements: true,
         region: ['cartesian'],
         navigation: {},
+        reorder: {},
         legend: true,
+        discreteAxis: true,
     },
     markCognitiveChannel: 'length',
     semanticInteractions: ({ resolvedEncodings }) => {
@@ -722,6 +724,7 @@ export const heatmapDef: ChartTemplateDef = {
         region: ['cartesian'],
         navigation: {},
         reorder: {},
+        legend: true,
         discreteAxis: true,
     },
     markCognitiveChannel: 'color',

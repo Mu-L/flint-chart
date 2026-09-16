@@ -120,6 +120,8 @@ export const sparklineDef: ChartTemplateDef = {
         elements: true,
         region: ['cartesian'],
         navigation: { axes: ['x'] },
+        reorder: {},
+        discreteAxis: true,
         index: true,
     },
     markCognitiveChannel: 'position',

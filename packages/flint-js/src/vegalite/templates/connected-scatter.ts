@@ -75,7 +75,9 @@ export const connectedScatterDef: ChartTemplateDef = {
         elements: true,
         region: ['cartesian'],
         navigation: {},
+        reorder: {},
         legend: true,
+        discreteAxis: true,
     },
     markCognitiveChannel: 'position',
     semanticInteractions: ({ resolvedEncodings }) => {

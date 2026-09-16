@@ -138,6 +138,7 @@ export const lineChartDef: ChartTemplateDef = {
         navigation: {},
         reorder: {},
         legend: true,
+        discreteAxis: true,
         index: true,
     },
     markCognitiveChannel: 'position',

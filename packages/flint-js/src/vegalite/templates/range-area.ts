@@ -55,6 +55,7 @@ export const rangeAreaChartDef: ChartTemplateDef = {
         region: ['cartesian'],
         navigation: {},
         legend: true,
+        discreteAxis: true,
         index: true,
     },
     markCognitiveChannel: 'area',

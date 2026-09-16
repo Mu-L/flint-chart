@@ -151,6 +151,7 @@ export const violinPlotDef: ChartTemplateDef = {
     interactionSupport: {
         elements: true,
         region: ['cartesian'],
+        legend: true,
         discreteAxis: true,
     },
     markCognitiveChannel: 'area',
