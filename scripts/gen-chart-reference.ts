@@ -13,7 +13,7 @@
  * Output:   docs/reference-<backend>.md
  */
 
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -532,6 +532,45 @@ function renderExcelReference(locale: 'en' | 'zh-CN'): string {
             : 'Use `excelGetTemplateDef(chartType)` or `excelGetTemplateChannels(chartType)` to check support before compiling.',
     ];
     return out.join('\n') + '\n';
+}
+
+/** The declaration table of the interaction design doc: one row per Vega-Lite chart type, one column per capability. */
+function renderInteractionSupportTable(locale: 'en' | 'zh-CN'): string {
+    const zh = locale === 'zh-CN';
+    const yes = '✓';
+    const rows = Object.values(vlTemplateDefs).flat()
+        .sort((left, right) => left.chart.localeCompare(right.chart))
+        .map((def) => {
+            const support = def.interactionSupport ?? {};
+            const navigation = support.navigation
+                ? support.navigation.geo ? 'geo' : (support.navigation.axes ?? ['x', 'y']).join(', ')
+                : '';
+            const reorder = support.reorder
+                ? support.reorder.includeConnectiveMarks
+                    ? (zh ? '含连接标记' : 'connective marks')
+                    : support.reorder.markTypes
+                        ? `${support.reorder.markTypes.join(', ')} ${zh ? '标记' : 'marks'}`
+                        : yes
+                : '';
+            return `| ${def.chart} | ${support.elements ? yes : ''} | ${(support.region ?? []).join(', ')} | ${navigation} | ${reorder} | ${support.legend ? yes : ''} | ${support.discreteAxis ? yes : ''} | ${support.index ? yes : ''} |`;
+        });
+    const header = zh
+        ? '| 图表类型 | elements | region | navigation | reorder | legend | discrete axis | index |'
+        : '| Chart type | elements | region | navigation | reorder | legend | discrete axis | index |';
+    return [header, '|---|---|---|---|---|---|---|---|', ...rows].join('\n');
+}
+
+for (const [locale, directory] of [['en', DOCS_DIR], ['zh-CN', ZH_DOCS_DIR]] as const) {
+    const path = resolve(directory, 'design-interactions.md');
+    const doc = readFileSync(path, 'utf8');
+    const start = '<!-- interaction-support:start -->';
+    const end = '<!-- interaction-support:end -->';
+    const from = doc.indexOf(start);
+    const to = doc.indexOf(end);
+    if (from < 0 || to < 0) throw new Error(`${path}: declaration table markers not found`);
+    writeFileSync(path, `${doc.slice(0, from + start.length)}\n${renderInteractionSupportTable(locale)}\n${doc.slice(to)}`, 'utf8');
+    // eslint-disable-next-line no-console
+    console.log(`Wrote the declaration table into ${locale === 'en' ? '' : 'zh-CN/'}design-interactions.md`);
 }
 
 for (const spec of BACKENDS) {

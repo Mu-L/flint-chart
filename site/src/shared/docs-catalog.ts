@@ -101,6 +101,12 @@ export const DOCUMENTATION_GROUPS: DocGroup[] = [
         file: '../../../docs/design-stretch-model.md',
       },
       {
+        slug: 'interaction-design',
+        title: 'Interaction Design',
+        description: 'Presets, the interaction spec, chart semantics, capabilities and admission, reset, and the mount pipeline.',
+        file: '../../../docs/design-interactions.md',
+      },
+      {
         slug: 'api-reference',
         title: 'API reference',
         description: 'ChartAssemblyInput, assemblers, encodings, options, and exports.',

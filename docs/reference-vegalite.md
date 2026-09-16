@@ -34,7 +34,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `size`, `shape`, `detail`, `opacity`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -49,7 +49,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `size`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -65,7 +65,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `order`, `color`, `detail`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -205,7 +205,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -216,7 +216,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -227,7 +227,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `color`, `detail`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -242,7 +242,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `row`
 
-**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -285,7 +285,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `open`, `high`, `low`, `close`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -301,7 +301,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `strokeDash`, `detail`, `opacity`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -319,7 +319,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `detail`, `row`, `column`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -366,7 +366,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `opacity`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -381,7 +381,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -392,7 +392,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `y2`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `inspect-index`, `navigate`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -465,7 +465,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `y`, `color`, `column`, `row`
 
-**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`, `drag-reorder`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `brush-zoom`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `navigate`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
@@ -478,7 +478,7 @@ The **Availability** column shows whether a parameter is `always` available or `
 
 **Encoding channels:** `x`, `color`
 
-**Interactions:** `click-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `linked-brush`, `context-activate`, `long-press`, `double-activate`, `inspect`
+**Interactions:** `click-highlight`, `axis-highlight`, `click-group-focus`, `hover-group-focus`, `click-annotate`, `select`, `lasso-select`, `brush-x`, `brush-y`, `linked-brush`, `legend-toggle`, `context-activate`, `long-press`, `double-activate`, `inspect`, `drag-reorder`
 
 | Parameter | Control | Domain | Default | Availability | Description |
 |---|---|---|---|---|---|
