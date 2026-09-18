@@ -128,7 +128,7 @@ export function YouDrawItStage() {
   const drawInteraction = useMemo<CanvasInteractionDef>(() => ({
     id: DRAW_INTERACTION_ID,
     eventSource: lassoTrigger('contain', false),
-    affordances: [{ target: 'plot', cursor: 'draw' }],
+    affordances: { plot: { cursor: 'draw' } },
     handle(event): ChartUpdate | null {
       if (event.action !== 'select-lasso') return null;
       if (event.phase === 'start') return null;

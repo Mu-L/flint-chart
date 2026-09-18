@@ -31,11 +31,13 @@ export type {
 } from './guides';
 export type {
     InteractionAffordance,
+    InteractionAffordances,
     InteractionAffordanceTarget,
     InteractionCursor,
     InteractionHoverEffect,
+    ResolvedInteractionAffordance,
 } from './affordances';
-export { DRAW_CURSOR, affordanceCursor, resolveInteractionAffordance } from './affordances';
+export { DRAW_CURSOR, affordanceCursor, affordsTarget, resolveInteractionAffordance } from './affordances';
 export type {
     AnnotationCandidate,
     AnnotationConnection,

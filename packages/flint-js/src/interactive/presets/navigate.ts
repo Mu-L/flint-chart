@@ -52,7 +52,7 @@ export function createNavigateInteraction(options: NavigateOptions = {}): Canvas
             wheelSensitivity: options.wheelSensitivity ?? 0.002,
             reset: options.reset,
         }),
-        affordances: options.pan === false ? [] : [{ target: 'plot', cursor: 'navigate' }],
+        affordances: options.pan === false ? { plot: {} } : { plot: { cursor: 'navigate' } },
         handle(event, context) {
             const viewport = event.geometry.plot;
             if (!context.resolveNavigation || viewport?.kind !== 'viewport' || !event.operation) return null;

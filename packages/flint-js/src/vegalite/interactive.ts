@@ -85,8 +85,8 @@ export function createVegaInteractiveRenderer(
                     vegaSpec,
                     interactionPlan.axisFields,
                     interactionPlan.reorderAxes,
-                    (interactionPlan.interactions ?? canvasInteractions).some((interaction) => interaction.affordances?.some((affordance) =>
-                        affordance.target === 'axis-label' && affordance.hover))
+                    (interactionPlan.interactions ?? canvasInteractions).some((interaction) =>
+                        interaction.affordances['axis-label']?.hover)
                         ? interactionPlan.selectionBoundary?.color ?? '#20262c'
                         : undefined,
                 );

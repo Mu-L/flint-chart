@@ -11,7 +11,7 @@ import { NAVIGATION_RESET, NO_RESET, SELECTION_RESET, normalizeResetGestures, ty
 import type { InteractionPresetType } from '../core/interaction-spec';
 import type { InspectIndexShow, InspectMode } from './triggers';
 import type { InspectGuideOptions, RegionGuideOptions } from './guides';
-import type { InteractionAffordance } from './affordances';
+import type { InteractionAffordanceTarget, InteractionAffordances } from './affordances';
 import type {
     NavigationAxes,
 } from './language/events';
@@ -23,6 +23,8 @@ import {
     createClickAnnotateInteraction,
     createClickGroupFocusInteraction,
     createClickHighlightInteraction,
+    CLICK_HIGHLIGHT_AFFORDANCE_TARGET,
+    CLICK_HIGHLIGHT_DEFAULT_TARGETS,
     createContextActivateInteraction,
     createDoubleActivateInteraction,
     createInspectInteraction,
@@ -111,16 +113,18 @@ export interface CanvasInteractionDef {
     /** Drops state the preset keeps outside the chart's retained updates, when a reset gesture fires. */
     onReset?(): void;
     readonly eventSource: InteractionEventSource;
-    readonly affordances?: readonly InteractionAffordance[];
+    /**
+     * The kinds of hit this interaction affords the reader, each with the cursor and hover
+     * that signal it. The runtime sends a hit only to the interactions that afford its kind.
+     */
+    readonly affordances: InteractionAffordances;
+    /** A copy that affords fewer targets, or null when none remain. */
+    withoutAffordances?(drop: readonly InteractionAffordanceTarget[]): CanvasInteractionDef | null;
     /** Retained updates from interactions in the same group replace one another. */
     readonly retainedStateGroup?: string;
     readonly navigationDomainGuard?: NavigationDomainGuard;
     /** A reset gesture on this interaction tweens home over this duration. */
     readonly navigationResetTransition?: NavigationTransition;
-    /** Claims legend activations exclusively, so a legend click never also reads as an element click. */
-    readonly claimsLegendActivation?: boolean;
-    /** Claims native axis tick activations instead of treating them as mark activations. */
-    readonly claimsAxisActivation?: boolean;
     handle?(event: CanvasInteractionEvent, context: InteractionContext): ChartUpdate | null;
 }
 
@@ -318,7 +322,14 @@ function withReset(
 }
 
 export function clickHighlight(options: ClickHighlightOptions = {}): CanvasInteractionDef {
-    return asPreset('click-highlight', withReset(createClickHighlightInteraction(options), options.reset, SELECTION_RESET));
+    return {
+        ...asPreset('click-highlight', withReset(createClickHighlightInteraction(options), options.reset, SELECTION_RESET)),
+        withoutAffordances(drop) {
+            const remaining = (options.targets ?? CLICK_HIGHLIGHT_DEFAULT_TARGETS)
+                .filter((target) => !drop.includes(CLICK_HIGHLIGHT_AFFORDANCE_TARGET[target]));
+            return remaining.length > 0 ? clickHighlight({ ...options, targets: remaining }) : null;
+        },
+    };
 }
 
 export function axisHighlight(options: AxisHighlightOptions = {}): CanvasInteractionDef {

@@ -609,6 +609,7 @@ describe('Vega-Lite semantic interactions', () => {
         const interaction: CanvasInteractionDef = {
             id: 'freeform-drag',
             eventSource: dragTrigger(),
+            affordances: { mark: { cursor: 'drag' } },
             handle: () => null,
         };
 

@@ -40,7 +40,7 @@ const FLY_MS = 700;
 const CLICK_REGION: CanvasInteractionDef = {
   id: CLICK_ID,
   eventSource: clickTrigger,
-  affordances: [{ target: 'mark', cursor: 'activate', hover: 'target' }],
+  affordances: { mark: { cursor: 'activate', hover: 'target' } },
   handle() {
     return null;
   },

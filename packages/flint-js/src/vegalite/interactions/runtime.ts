@@ -25,6 +25,7 @@ import type {
 import { isCanvasInteraction } from '../../interactive/interactions';
 import {
     affordanceCursor,
+    affordsTarget,
     resolveInteractionAffordance,
     type InteractionAffordanceTarget,
 } from '../../interactive/affordances';
@@ -354,7 +355,7 @@ export function interactionsForHoverPresentation(
         ...clickInteractions,
         ...elementDragInteractions,
         ...inspectInteractions,
-    ].filter((interaction, index, candidates) => interaction.affordances?.some((affordance) => affordance.hover)
+    ].filter((interaction, index, candidates) => Object.values(interaction.affordances).some((affordance) => affordance.hover)
         && candidates.findIndex((candidate) => candidate.id === interaction.id) === index);
 }
 
@@ -558,15 +559,15 @@ export function mountVegaInteractions(
     const hoverInteractions = resolve
         ? canvasInteractions.filter((interaction) => interaction.eventSource.gesture === 'hover')
         : [];
-    const axisClickInteractions = clickInteractions.filter((interaction) => interaction.claimsAxisActivation);
-    const markClickInteractions = clickInteractions.filter((interaction) =>
-        resolveInteractionAffordance([interaction], 'mark')
-        || resolveInteractionAffordance([interaction], 'legend-item'));
-    const axisHoverInteractions = hoverInteractions.filter((interaction) => interaction.claimsAxisActivation);
-    const markHoverInteractions = hoverInteractions.filter((interaction) => !interaction.claimsAxisActivation);
+    // One list per gesture and kind of hit, each defined by the affordance it needs.
+    const axisClickInteractions = clickInteractions.filter((interaction) => affordsTarget(interaction, 'axis-label'));
+    const markClickInteractions = clickInteractions.filter((interaction) => affordsTarget(interaction, 'mark'));
+    const legendClickInteractions = clickInteractions.filter((interaction) => affordsTarget(interaction, 'legend-item'));
+    const axisHoverInteractions = hoverInteractions.filter((interaction) => affordsTarget(interaction, 'axis-label'));
+    const markHoverInteractions = hoverInteractions.filter((interaction) => affordsTarget(interaction, 'mark'));
+    const legendHoverInteractions = hoverInteractions.filter((interaction) => affordsTarget(interaction, 'legend-item'));
     const axisHoverPresentationInteractions = [...axisClickInteractions, ...axisHoverInteractions]
-        .filter((interaction) => interaction.affordances?.some((affordance) =>
-            affordance.target === 'axis-label' && affordance.hover));
+        .filter((interaction) => interaction.affordances['axis-label']?.hover);
     const contextInteractions = resolve
         ? canvasInteractions.filter((interaction) => interaction.eventSource.gesture === 'context')
         : [];
@@ -584,7 +585,7 @@ export function mountVegaInteractions(
             && interaction.eventSource.gesture === 'drag')
         : [];
     const hoverPresentationInteractions = interactionsForHoverPresentation(
-        [...markClickInteractions, ...longPressInteractions, ...doubleInteractions],
+        [...markClickInteractions, ...legendClickInteractions, ...longPressInteractions, ...doubleInteractions],
         markHoverInteractions,
         elementDragInteractions,
         inspectInteractions,
@@ -1266,7 +1267,7 @@ export function mountVegaInteractions(
                 for (const sibling of evictRetainedStateSiblings(
                     interaction, canvasInteractions, retainedUpdates, previewUpdates,
                 )) {
-                    if (sibling.claimsLegendActivation) selectedLegend = null;
+                    if (affordsTarget(sibling, 'legend-item')) selectedLegend = null;
                 }
             }
             await storeUpdate(update, preview ? previewUpdates : retainedUpdates, legendSelection, options, false);
@@ -1606,12 +1607,10 @@ export function mountVegaInteractions(
         );
         const legend = normalized.legend;
         if (legend) {
-            const legendHoverInteractions = hoverPresentationForTarget('legend-item');
-            if (legendHoverInteractions.length === 0) return clearHover();
+            if (hoverPresentationForTarget('legend-item').length === 0) return clearHover();
             const resolved = legendSemanticTarget(legend);
             hoverActive = true;
-            for (const interaction of markHoverInteractions.filter((candidate) =>
-                legendHoverInteractions.includes(candidate))) {
+            for (const interaction of legendHoverInteractions) {
                 void dispatch(interaction, {
                     type: 'semantic', source: 'element', phase: 'preview', target: resolved, point,
                     modifiers: normalized.event.modifiers,
@@ -1697,9 +1696,7 @@ export function mountVegaInteractions(
             resolveTarget('click', 'legend-item', [], legend),
         )
             : resolveTarget('click', normalized.role, normalized.event.hits);
-        for (const interaction of markClickInteractions) {
-            const affordanceTarget = legend ? 'legend-item' : 'mark';
-            if (!resolveInteractionAffordance([interaction], affordanceTarget)) continue;
+        for (const interaction of legend ? legendClickInteractions : markClickInteractions) {
             void dispatch(interaction, {
                 type: 'semantic', source: 'element', phase: 'commit', target, point,
                 modifiers: normalized.event.modifiers,
@@ -1732,7 +1729,7 @@ export function mountVegaInteractions(
         const { legend } = normalized;
         const target = legend ? legendSemanticTarget(legend)
             : resolveTarget('click', normalized.role, normalized.event.hits);
-        for (const interaction of contextInteractions) {
+        for (const interaction of contextInteractions.filter((candidate) => affordsTarget(candidate, legend ? 'legend-item' : 'mark'))) {
             void dispatch(interaction, {
                 type: 'semantic', source: 'element', phase: 'commit', target, point,
                 modifiers: normalized.event.modifiers,
@@ -2021,7 +2018,7 @@ export function mountVegaInteractions(
             consumeDismissClick = true;
             suppressClick = true;
             window.setTimeout(() => { suppressClick = false; }, 0);
-            for (const interaction of longPressInteractions) {
+            for (const interaction of longPressInteractions.filter((candidate) => affordsTarget(candidate, acquired.legend ? 'legend-item' : 'mark'))) {
                 void dispatch(interaction, {
                     type: 'semantic', source: 'element', phase: 'commit',
                     target: acquired.target, point: acquired.point, modifiers: acquired.modifiers,
@@ -2041,7 +2038,7 @@ export function mountVegaInteractions(
         event.preventDefault();
         cancelPendingDismiss();
         const acquired = pointerTarget(event, doubleInteractions);
-        for (const interaction of doubleInteractions) {
+        for (const interaction of doubleInteractions.filter((candidate) => affordsTarget(candidate, acquired.legend ? 'legend-item' : 'mark'))) {
             void dispatch(interaction, {
                 type: 'semantic', source: 'element', phase: 'commit',
                 target: acquired.target, point: acquired.point, modifiers: acquired.modifiers,
@@ -2073,7 +2070,7 @@ export function mountVegaInteractions(
     const previousTouchAction = container.style.touchAction;
     if (longPressInteractions.length > 0) container.style.touchAction = 'none';
     const suppressTextSelection = doubleInteractions.length > 0
-        || canvasInteractions.some((interaction) => interaction.claimsLegendActivation);
+        || canvasInteractions.some((interaction) => affordsTarget(interaction, 'legend-item'));
     if (suppressTextSelection) container.style.userSelect = 'none';
     const localPoint = (event: PointerEvent): { x: number; y: number } => {
         return clientToPlotPoint({ x: event.clientX, y: event.clientY }, coordinateSpace());
@@ -2087,7 +2084,7 @@ export function mountVegaInteractions(
         };
     };
     const cursorInteractions = canvasInteractions.filter((interaction) =>
-        interaction.affordances?.some((affordance) => affordance.cursor));
+        Object.values(interaction.affordances).some((affordance) => affordance.cursor));
     const setAffordanceCursor = (
         target: InteractionAffordanceTarget,
         reorderEligible: boolean,
@@ -2442,6 +2439,7 @@ export function mountVegaInteractions(
     const keyboardInteraction: CanvasInteractionDef = {
         id: 'keyboard-targeting',
         eventSource: keyboardTrigger,
+        affordances: { mark: {} },
     };
     const moveKeyboardTarget = (direction: SpatialDirection): void => {
         const items = keyboardTargets();
@@ -2477,7 +2475,7 @@ export function mountVegaInteractions(
             .find((candidate) => renderHit(candidate)?.datum[INTERACTION_KEY] === activeKeyboardKey);
         const active = item ? keyboardFocus(item) : undefined;
         if (!active) return;
-        for (const interaction of clickInteractions) {
+        for (const interaction of markClickInteractions) {
             void dispatch(interaction, {
                 type: 'semantic', source: 'element', phase: 'commit',
                 target: active.target, point: active.point,

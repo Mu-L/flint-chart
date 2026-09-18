@@ -8,6 +8,7 @@ import {
 } from '../../interactive/interactions';
 import { toCanvasInteractionEvent } from '../../interactive/canvas-interaction';
 import { admitInteractions, navigationAxesFor } from '../../interactive/spec/admission';
+import { affordsTarget } from '../../interactive/affordances';
 import { DEFAULT_DIM_OPACITY } from '../../interactive/presets/utils';
 import { INTERACTION_PROVENANCE, type InteractionProvenance } from '../interaction-provenance';
 import type {
@@ -461,7 +462,7 @@ export function addVegaLiteInteractions(
         : false;
     if (needsSemanticPresentation && !instrumented) return null;
     if (instrumented) addLocalKeyTransforms(spec, fields, selectableMarks);
-    if (instrumented && admitted.some((interaction) => interaction.claimsLegendActivation)) {
+    if (instrumented && admitted.some((interaction) => affordsTarget(interaction, 'legend-item'))) {
         pinLegendDomains(spec, templateSemantics.legendFields);
     }
     stripInteractionProvenance(spec);
