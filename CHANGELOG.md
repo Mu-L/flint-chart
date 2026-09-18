@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dropped with an `unsupported_interaction` warning; a code definition throws.
   `validateChart()` and the MCP `validate_chart` report the same warnings;
   `list_chart_types` and the Vega-Lite reference list the supported presets.
+  A second region drag or a second `drag-reorder` in a spec now yields with a
+  `conflicting_interactions` warning, the way a second `navigate` does; the
+  runtime mounted only the first and said nothing.
 - Chart validation is now part of the core package. `validateChart(input,
   backend)` returns `{ valid, warnings, errors, computedSize }` without
   throwing, alongside `validateChartInput`, `validateSemanticTypes`,
@@ -33,6 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `semantic_types` labels surface as `unknown_semantic_type` warnings, and
   `isRegistered` / `getRegisteredTypes` are exported from `flint-chart/core`
   ([#104](https://github.com/microsoft/flint-chart/issues/104)).
+
+### Changed
+
+- `CanvasInteractionDef.affordances` is now a required map from the kind of
+  hit (`mark`, `legend-item`, `axis-label`, `plot`) to its cursor and hover,
+  and it is the only dispatch gate: the runtime sends a hit to an interaction
+  only when the interaction affords its kind, on every path including
+  keyboard, context, long press, and double-click. The flags
+  `claimsLegendActivation` and `claimsAxisActivation` are gone; a key says the
+  same thing. `clickHighlight()` gains `withoutAffordances(drop)`, a copy that
+  affords fewer targets. A definition built by hand must declare
+  `affordances`; `affordsTarget(interaction, target)` reads the gate. A long
+  press, a right-click, or a double-click on a legend item no longer reaches a
+  preset that affords marks only.
 
 ### Fixed
 

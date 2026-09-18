@@ -65,7 +65,7 @@ A preset factory returns a `CanvasInteractionDef`:
 | `preset` | the preset that made it; admission reads its requirements from the core table |
 | `eventSource` | the trigger: an element click or hover, a drag region, a navigation gesture |
 | `reset` | the gestures that return it to neutral (§6) |
-| `affordances` | cursor and hover feedback per target kind |
+| `affordances` | the kinds of hit it affords (`mark`, `legend-item`, `axis-label`, `plot`), each with its cursor and hover; the runtime dispatches a hit only to the interactions that afford its kind |
 | `handle(event, context)` | turns a resolved semantic event into a `ChartUpdate`, or `null` |
 | `origin` | `'spec'` when the resolver made it; absent for code |
 
@@ -266,9 +266,10 @@ assembler wrote:
    Bar Chart has none.`
 2. A `navigate` that asks for an axis the chart does not navigate is refused by axis, because
    the capability alone cannot judge `axes: 'x'` against a chart that navigates y.
-3. Three conflict rules between pairs, unchanged by the capability model: one navigation per
-   chart; a pan cannot share the unmodified drag with a region preset; a double-click cannot
-   both activate a mark and reset another interaction. The later entry yields.
+3. Three conflict rules between pairs, unchanged by the capability model: one interaction per
+   gesture slot (navigation, region drag, element drag), because the runtime mounts one of each;
+   a pan cannot share the unmodified drag with a region preset; a double-click cannot both
+   activate a mark and reset another interaction. The later entry yields.
 
 The origin decides the consequence. A spec entry is dropped with a `ChartWarning`,
 `unsupported_interaction` or `conflicting_interactions`, and the message ends with "The

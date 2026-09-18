@@ -52,7 +52,7 @@
 | `preset` | 生成它的预设；准入据此从核心表读取需求 |
 | `eventSource` | 触发器：元素点击或悬停、拖动区域、导航手势 |
 | `reset` | 使其回到中性状态的手势（§6） |
-| `affordances` | 各目标类型的光标与悬停反馈 |
+| `affordances` | 它响应的命中类型（`mark`、`legend-item`、`axis-label`、`plot`），每种带光标与悬停反馈；运行时只把命中派发给声明了该类型的交互 |
 | `handle(event, context)` | 把已解析的语义事件变成 `ChartUpdate`，或返回 `null` |
 | `origin` | 由解析器生成时为 `'spec'`；代码定义没有该字段 |
 
@@ -203,7 +203,7 @@ _interactionSemantics: {
 
 1. 对每个交互，其所需的每项能力必须在 `plan.capabilities` 中。第一个缺失的能力决定消息：`Interaction "legend-toggle" requires a discrete legend; Bar Chart has none.`
 2. 请求图表不能导航的轴的 `navigate` 按轴拒绝，因为仅凭能力无法判断 `axes: 'x'` 对一张只能导航 y 的图表。
-3. 三条成对冲突规则，不受能力模型影响：每张图表一个导航；平移不能与区域预设共用未加修饰的拖动；双击不能既激活标记又重置另一交互。后面的条目让步。
+3. 三条成对冲突规则，不受能力模型影响：每个手势槽位（导航、区域拖动、元素拖动）一个交互，因为运行时各只挂载一个；平移不能与区域预设共用未加修饰的拖动；双击不能既激活标记又重置另一交互。后面的条目让步。
 
 来源决定后果。spec 条目以 `ChartWarning` 丢弃，代码为 `unsupported_interaction` 或 `conflicting_interactions`，消息以 “The interaction was dropped.” 结尾。代码定义以同一句子抛出异常。警告到达 `surface.warnings`、控制台（一次）、`validateChart()` 以及 MCP 的 `validate_chart`。
 
