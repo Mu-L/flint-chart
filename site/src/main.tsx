@@ -27,6 +27,7 @@ import { LabelExperimentLab } from './playground/LabelExperimentLab';
 import { OverflowViewportLab } from './playground/OverflowViewportLab';
 import { ClickFocusLab, SpecTestCasesLab } from './playground/ClickFocusLab';
 import { InteractionCoverageLab } from './playground/InteractionCoverageLab';
+import { InteractionConflictsLab } from './playground/InteractionConflictsLab';
 import { AnnotationLab } from './playground/AnnotationLab';
 import { InteractionDashboardLab } from './playground/InteractionDashboardLab';
 import { InteractionCandidates } from './playground/InteractionCandidates';
@@ -90,6 +91,7 @@ function AppRoutes({ locale }: { locale: Locale }) {
           <Route path="spec-test-cases" element={<SpecTestCasesLab />} />
           <Route path="annotation-lab" element={<AnnotationLab />} />
           <Route path="interaction-coverage" element={<InteractionCoverageLab />} />
+          <Route path="interaction-conflicts" element={<InteractionConflictsLab />} />
           <Route path="pan-zoom" element={<Navigate to="../click-focus" replace />} />
           <Route path="interaction-dashboard" element={<InteractionDashboardLab />} />
           <Route path="external-to-chart" element={<ExternalToChartLab />} />
