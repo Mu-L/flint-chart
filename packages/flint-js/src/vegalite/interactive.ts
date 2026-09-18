@@ -15,6 +15,23 @@ import {
     withoutSemanticInteractionField,
 } from './interactions/compile';
 import { mountVegaInteractions } from './interactions/runtime';
+
+/**
+ * The runtime mounts what admission kept, in the author's order. Admission may replace a
+ * definition with a copy that affords less, so a canvas definition is matched by id, not
+ * by identity; external definitions pass through untouched.
+ */
+export function mountedInteractionList(
+    interactions: readonly InteractionDef[],
+    admitted: readonly InteractionDef[],
+): InteractionDef[] {
+    const byId = new Map(admitted.map((interaction) => [interaction.id, interaction]));
+    return interactions.flatMap((interaction) => {
+        if (!isCanvasInteraction(interaction)) return [interaction];
+        const kept = byId.get(interaction.id);
+        return kept ? [kept] : [];
+    });
+}
 import { INTERACTION_STORES } from './interactions/stores';
 import { compile } from 'vega-lite';
 import { Error as VegaError, parse, View } from 'vega';
@@ -138,10 +155,7 @@ export function createVegaInteractiveRenderer(
                 tooltip.call(handler, event, item, withoutSemanticInteractionField(value));
             });
             await view.runAsync();
-            // The runtime mounts what admission kept; external definitions pass through untouched.
-            const admittedCanvas = new Set<InteractionDef>(interactionPlan?.interactions ?? canvasInteractions);
-            const mountedInteractions = interactions.filter((interaction) =>
-                !isCanvasInteraction(interaction) || admittedCanvas.has(interaction));
+            const mountedInteractions = mountedInteractionList(interactions, interactionPlan?.interactions ?? canvasInteractions);
             const interactionController = interactionPlan
                 ? mountVegaInteractions(
                     view,

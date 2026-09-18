@@ -195,6 +195,21 @@ describe('admitInteractions', () => {
     });
 });
 
+describe('mountedInteractionList', () => {
+    it('mounts the admitted copy in the author\'s place, drops what admission dropped, and passes externals through', async () => {
+        const { mountedInteractionList } = await import('../src/vegalite/interactive');
+        const { externalInteraction } = await import('../src/interactive/interactions');
+        const highlight = clickHighlight();
+        const narrowed = highlight.withoutAffordances!(['legend-item'])!;
+        const external = externalInteraction({ id: 'host', handle: () => null });
+        const authored = [highlight, external, brushX(), ...fromSpec([{ type: 'legend-toggle' }])];
+        const admitted = [narrowed, authored[3]];
+        const mounted = mountedInteractionList(authored, admitted);
+        expect(mounted.map((interaction) => interaction.id)).toEqual(['click-highlight', 'host', 'legend-toggle']);
+        expect(mounted[0]).toBe(narrowed);
+    });
+});
+
 describe('addVegaLiteInteractions with spec interactions', () => {
     const assembled = (): any => assembleVegaLite({
         data: { values: [{ category: 'A', value: 1 }, { category: 'B', value: 2 }] },
