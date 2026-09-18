@@ -25,7 +25,7 @@ const ids = (interactions: readonly CanvasInteractionDef[]): string[] => interac
 
 describe('admitInteractions', () => {
     it('admits everything the chart can honour, in order, with no warnings', () => {
-        const result = admitInteractions(CARTESIAN, [clickHighlight(), brushX(), ...fromSpec([{ type: 'legend-toggle' }])]);
+        const result = admitInteractions(CARTESIAN, [clickHighlight({ targets: ['mark'] }), brushX(), ...fromSpec([{ type: 'legend-toggle' }])]);
         expect(ids(result.admitted)).toEqual(['click-highlight', 'brush-x', 'legend-toggle']);
         expect(result.warnings).toEqual([]);
     });
@@ -68,58 +68,116 @@ describe('admitInteractions', () => {
         expect(result.warnings[0]).toMatchObject({ code: 'unsupported_interaction' });
     });
 
-    it('keeps one navigation interaction: a second spec navigate yields, code keeps today\'s behaviour', () => {
+    it('keeps one navigation interaction: a second spec navigate yields, a second code navigate throws', () => {
         const spec = admitInteractions(CARTESIAN, fromSpec([{ type: 'navigate' }, { type: 'navigate', id: 'again' }]));
         expect(ids(spec.admitted)).toEqual(['navigate']);
-        expect(spec.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
-        expect(spec.warnings[0].message).toContain('"again" is a second navigation interaction; the chart keeps "navigate"');
-        const code = admitInteractions(CARTESIAN, [navigate(), navigate({ id: 'again' })]);
-        expect(ids(code.admitted)).toEqual(['navigate', 'again']);
-        expect(code.warnings).toEqual([]);
+        expect(spec.warnings[0]).toMatchObject({ severity: 'warning', code: 'conflicting_interactions' });
+        expect(spec.warnings[0].message).toBe('Interaction "again" shares the navigation slot with "navigate". The interaction was dropped.');
+        expect(() => admitInteractions(CARTESIAN, [navigate(), navigate({ id: 'again' })]))
+            .toThrow('Interaction "again" shares the navigation slot with "navigate".');
     });
 
-    it('keeps one region drag: a second spec brush yields, code keeps today\'s behaviour', () => {
+    it('keeps one region drag: a second spec brush yields, a second code brush throws', () => {
         const spec = admitInteractions(CARTESIAN, fromSpec([{ type: 'brush-x' }, { type: 'brush-y' }, { type: 'click-highlight' }]));
         expect(ids(spec.admitted)).toEqual(['brush-x', 'click-highlight']);
         expect(spec.warnings).toHaveLength(1);
-        expect(spec.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
-        expect(spec.warnings[0].message).toContain('"brush-y" is a second region drag interaction; the chart keeps "brush-x"');
-        const code = admitInteractions(CARTESIAN, [brushX(), brushY()]);
-        expect(ids(code.admitted)).toEqual(['brush-x', 'brush-y']);
-        expect(code.warnings).toEqual([]);
+        expect(spec.warnings[0].message).toBe('Interaction "brush-y" shares the region drag slot with "brush-x". The interaction was dropped.');
+        expect(() => admitInteractions(CARTESIAN, [brushX(), brushY()]))
+            .toThrow('Interaction "brush-y" shares the region drag slot with "brush-x".');
     });
 
-    it('a spec region drag yields to a code region drag that comes later', () => {
-        const result = admitInteractions(CARTESIAN, [...fromSpec([{ type: 'select' }]), brushX()]);
-        expect(ids(result.admitted)).toEqual(['select', 'brush-x']);
+    it('a spec region drag yields to a code region drag, whatever the order', () => {
+        const specFirst = admitInteractions(CARTESIAN, [...fromSpec([{ type: 'select' }]), brushX()]);
+        expect(ids(specFirst.admitted)).toEqual(['brush-x']);
+        expect(specFirst.warnings[0].message).toContain('"select" shares the region drag slot with "brush-x"');
         const specLater = admitInteractions(CARTESIAN, [brushX(), ...fromSpec([{ type: 'select' }])]);
         expect(ids(specLater.admitted)).toEqual(['brush-x']);
-        expect(specLater.warnings[0].message).toContain('"select" is a second region drag interaction; the chart keeps "brush-x"');
     });
 
     it('keeps one element drag: a second spec drag-reorder yields', () => {
         const plan = { capabilities: ['elements', 'reorder'] as const };
         const spec = admitInteractions(plan, fromSpec([{ type: 'drag-reorder' }, { type: 'drag-reorder', id: 'again' }]));
         expect(ids(spec.admitted)).toEqual(['drag-reorder']);
-        expect(spec.warnings[0].message).toContain('"again" is a second element drag interaction; the chart keeps "drag-reorder"');
-        const code = admitInteractions(plan, [dragReorder(), dragReorder({ id: 'again' })]);
-        expect(ids(code.admitted)).toEqual(['drag-reorder', 'again']);
+        expect(spec.warnings[0].message).toContain('"again" shares the element drag slot with "drag-reorder"');
+        expect(() => admitInteractions(plan, [dragReorder(), dragReorder({ id: 'again' })]))
+            .toThrow('shares the element drag slot');
+    });
+
+    describe('shared hit triggers', () => {
+        const keys = (interaction: CanvasInteractionDef) => Object.keys(interaction.affordances).sort();
+
+        it('click-highlight yields the legend click to legend-toggle and keeps the rest', () => {
+            const result = admitInteractions(CARTESIAN, fromSpec([{ type: 'click-highlight' }, { type: 'legend-toggle' }]));
+            expect(ids(result.admitted)).toEqual(['click-highlight', 'legend-toggle']);
+            expect(keys(result.admitted[0])).toEqual(['axis-label', 'mark']);
+            expect(result.admitted[0]).toMatchObject({ origin: 'spec', preset: 'click-highlight', retainedStateGroup: 'focus' });
+            expect(result.warnings).toEqual([{
+                severity: 'info',
+                code: 'conflicting_interactions',
+                message: 'Interaction "click-highlight" yields legend clicks to "legend-toggle".',
+            }]);
+        });
+
+        it('click-highlight yields the axis click to axis-highlight', () => {
+            const plan = { capabilities: ['elements', 'discrete-axis', 'legend'] as const };
+            const result = admitInteractions(plan, fromSpec([{ type: 'axis-highlight' }, { type: 'click-highlight' }]));
+            expect(ids(result.admitted)).toEqual(['axis-highlight', 'click-highlight']);
+            expect(keys(result.admitted[1])).toEqual(['legend-item', 'mark']);
+            expect(result.warnings[0].message).toBe('Interaction "click-highlight" yields axis label clicks to "axis-highlight".');
+        });
+
+        it('click-highlight yields the mark click to click-group-focus, which shares its focus group', () => {
+            const result = admitInteractions(CARTESIAN, fromSpec([{ type: 'click-highlight' }, { type: 'click-group-focus' }]));
+            expect(ids(result.admitted)).toEqual(['click-highlight', 'click-group-focus']);
+            expect(keys(result.admitted[0])).toEqual(['axis-label', 'legend-item']);
+            expect(result.warnings[0].message).toBe('Interaction "click-highlight" yields mark clicks with retained focus to "click-group-focus".');
+        });
+
+        it('a click-highlight left with one target yields no further; the later entry drops', () => {
+            const result = admitInteractions(CARTESIAN, fromSpec([
+                { type: 'click-highlight', options: { targets: ['mark'] } }, { type: 'click-group-focus' },
+            ]));
+            expect(ids(result.admitted)).toEqual(['click-highlight']);
+            expect(result.warnings[0]).toMatchObject({ severity: 'warning' });
+            expect(result.warnings[0].message).toContain('"click-group-focus" shares mark clicks with retained focus with "click-highlight"');
+        });
+
+        it('click-annotate and click-highlight share a mark click and compose with no warning', () => {
+            const result = admitInteractions(CARTESIAN, fromSpec([{ type: 'click-highlight' }, { type: 'click-annotate' }]));
+            expect(ids(result.admitted)).toEqual(['click-highlight', 'click-annotate']);
+            expect(result.warnings).toEqual([]);
+        });
+
+        it('a code click-highlight yields the same way, and the copy has no origin', () => {
+            const result = admitInteractions(CARTESIAN, [clickHighlight(), ...fromSpec([{ type: 'legend-toggle' }])]);
+            expect(keys(result.admitted[0])).toEqual(['axis-label', 'mark']);
+            expect(result.admitted[0].origin).toBeUndefined();
+            expect(result.warnings[0]).toMatchObject({ severity: 'info' });
+        });
+
+        it('keeps the legend on click-highlight when the chart drops legend-toggle', () => {
+            const noLegend = { capabilities: ['elements', 'cartesian-region'] as const };
+            const result = admitInteractions(noLegend, fromSpec([{ type: 'click-highlight' }, { type: 'legend-toggle' }]));
+            expect(ids(result.admitted)).toEqual(['click-highlight']);
+            expect(keys(result.admitted[0])).toEqual(['axis-label', 'legend-item', 'mark']);
+            expect(result.warnings.map((warning) => warning.code)).toEqual(['unsupported_interaction']);
+        });
     });
 
     describe('pan versus drag', () => {
         it('throws when both definitions come from code, as today', () => {
             expect(() => admitInteractions(CARTESIAN, [navigate(), select()]))
-                .toThrow('Pan navigation cannot share an unmodified drag gesture with a region interaction.');
+                .toThrow('Interaction "select" shares the plot drag with "navigate".');
         });
 
         it('drops the later spec entry', () => {
             const dragLater = admitInteractions(CARTESIAN, fromSpec([{ type: 'navigate' }, { type: 'select' }]));
             expect(ids(dragLater.admitted)).toEqual(['navigate']);
             expect(dragLater.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
-            expect(dragLater.warnings[0].message).toContain('"select" conflicts with "navigate"');
+            expect(dragLater.warnings[0].message).toContain('"select" shares the plot drag with "navigate"');
             const navigateLater = admitInteractions(CARTESIAN, fromSpec([{ type: 'select' }, { type: 'navigate' }]));
             expect(ids(navigateLater.admitted)).toEqual(['select']);
-            expect(navigateLater.warnings[0].message).toContain('"navigate" conflicts with "select"');
+            expect(navigateLater.warnings[0].message).toContain('"navigate" shares the plot drag with "select"');
         });
 
         it('drops the spec entry when the other side is code, whatever the order', () => {
@@ -168,7 +226,7 @@ describe('addVegaLiteInteractions with spec interactions', () => {
         expect(() => addVegaLiteInteractions(assembled(), [brushAngle()]))
             .toThrow('requires a polar chart with an angular region; Bar Chart has none');
         expect(() => addVegaLiteInteractions(assembled(), [navigate(), select()]))
-            .toThrow('Pan navigation cannot share');
+            .toThrow('shares the plot drag');
     });
 });
 
@@ -219,10 +277,12 @@ describe('admission against the chart type declaration', () => {
         expect(ids(result.admitted)).toEqual(['click-highlight', 'select', 'legend-toggle']);
         expect(result.warnings.map((warning) => warning.code)).toEqual([
             ...Array(4).fill('unsupported_interaction'),
-            ...Array(2).fill('conflicting_interactions'),
+            ...Array(3).fill('conflicting_interactions'),
         ]);
-        expect(result.warnings[4].message).toContain('"brush-x" is a second region drag interaction; the chart keeps "select"');
-        expect(result.warnings[5].message).toContain('"brush-angle" is a second region drag interaction; the chart keeps "select"');
+        expect(result.warnings[4]).toMatchObject({ severity: 'info' });
+        expect(result.warnings[4].message).toBe('Interaction "click-highlight" yields legend clicks to "legend-toggle".');
+        expect(result.warnings[5].message).toContain('"brush-x" shares the region drag slot with "select"');
+        expect(result.warnings[6].message).toContain('"brush-angle" shares the region drag slot with "select"');
     });
 
     it('a legend is confirmed by the data: a bar chart without a colour field drops legend-toggle', () => {

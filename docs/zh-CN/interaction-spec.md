@@ -90,7 +90,30 @@
 Interaction "legend-toggle" requires a discrete legend; Bar Chart has none. The interaction was dropped.
 ```
 
-两个条目也可能冲突：第二个 `navigate`、第二个区域拖动（`select`、`lasso-select`、各种 brush、`linked-brush`、`brush-zoom`）、第二个 `drag-reorder`、平移手势旁的拖动手势、或与 `double-click` 重置并存的 `double-activate`。后面的条目让步。
+### 两个交互共用一个触发器时
+
+触发器（trigger）是一种手势落在一种命中上：点击图例项、在绘图区拖动、双击。两个条目可能请求同一个触发器：
+
+| 触发器 | 谁请求它 |
+|---|---|
+| 导航槽位 | 每个 `navigate` |
+| 区域拖动槽位 | `select`、`lasso-select`、各种 brush、`linked-brush`、`brush-zoom` |
+| 元素拖动槽位 | `drag-reorder` |
+| 绘图区拖动 | 每个区域拖动、`drag-reorder`，以及开启平移的 `navigate` |
+| 双击 | `double-activate`，以及任何 `reset` 含 `double-click` 的条目 |
+| 图例点击 | `legend-toggle`、`click-highlight`、带系列切换的 `inspect-index` |
+| 轴标签点击 | `axis-highlight`、`click-highlight` |
+| 带保留焦点的标记点击 | `click-highlight`、`click-group-focus` |
+
+一个触发器只有一个所有者。当两者中恰好一个能放弃该触发器并保留其余部分时，它就放弃，并以一条 `info` 警告说明。今天只有 `click-highlight` 能这样做，一次放弃一个目标：
+
+```
+Interaction "click-highlight" yields legend clicks to "legend-toggle".
+```
+
+否则后面的条目整体让步并被丢弃，附带警告；spec 条目总是让步给代码定义。两个共用触发器的代码定义会抛出异常。
+
+两个选项可以提前避免冲突。`click-highlight` 接受 `targets`，所以 `{ "type": "click-highlight", "options": { "targets": ["mark"] } }` 永不请求图例或坐标轴。`navigate` 接受 `reset`，所以 `reset: ["escape"]` 把双击留给 `double-activate`。
 
 在哪里读取警告：
 

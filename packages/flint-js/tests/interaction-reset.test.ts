@@ -100,17 +100,16 @@ describe('admission: a double-click cannot both activate and reset', () => {
         const later = admitInteractions(PLAN, fromSpec([{ type: 'navigate' }, { type: 'double-activate' }]));
         expect(later.admitted.map((i) => i.id)).toEqual(['navigate']);
         expect(later.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
-        expect(later.warnings[0].message).toContain('"double-activate" conflicts with "navigate"');
+        expect(later.warnings[0].message).toContain('"double-activate" shares the double-click with "navigate"');
         const reversed = admitInteractions(PLAN, fromSpec([{ type: 'double-activate' }, { type: 'navigate' }]));
         expect(reversed.admitted.map((i) => i.id)).toEqual(['double-activate']);
     });
 
-    it('keeps both when both come from code, and admits a navigate that resets on escape only', async () => {
+    it('throws when both come from code, and admits a navigate that resets on escape only', async () => {
         const { admitInteractions } = await import('../src/interactive/spec/admission');
         const { doubleActivate } = await import('../src/interactive/interactions');
-        const code = admitInteractions(PLAN, [navigate(), doubleActivate()]);
-        expect(code.admitted.map((i) => i.id)).toEqual(['navigate', 'double-activate']);
-        expect(code.warnings).toEqual([]);
+        expect(() => admitInteractions(PLAN, [navigate(), doubleActivate()]))
+            .toThrow('Interaction "double-activate" shares the double-click with "navigate".');
         const noClash = admitInteractions(PLAN, fromSpec([{ type: 'navigate', options: { reset: ['escape'] } }, { type: 'double-activate' }]));
         expect(noClash.admitted.map((i) => i.id)).toEqual(['navigate', 'double-activate']);
     });

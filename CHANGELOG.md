@@ -23,9 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dropped with an `unsupported_interaction` warning; a code definition throws.
   `validateChart()` and the MCP `validate_chart` report the same warnings;
   `list_chart_types` and the Vega-Lite reference list the supported presets.
-  A second region drag or a second `drag-reorder` in a spec now yields with a
-  `conflicting_interactions` warning, the way a second `navigate` does; the
-  runtime mounted only the first and said nothing.
+  One trigger, one owner: `triggersOf(definition)` lists the triggers a
+  definition takes (the navigation, region drag, and element drag slots, the
+  plot drag, the double-click, and the legend, axis, and retained-focus mark
+  clicks); when two admitted definitions share one, the one that can give it
+  up and keep the rest does so with an `info` warning (`click-highlight`
+  through `withoutAffordances`), otherwise the later entry drops with a
+  `conflicting_interactions` warning, a spec entry always yields to code, and
+  two code definitions throw. Before, only three pairs were checked, and two
+  code definitions on one slot were kept with the runtime using the first.
 - Chart validation is now part of the core package. `validateChart(input,
   backend)` returns `{ valid, warnings, errors, computedSize }` without
   throwing, alongside `validateChartInput`, `validateSemanticTypes`,
@@ -53,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A legend click with both `click-highlight` and `legend-toggle` mounted hid the
+  series and dimmed every other bar, because both presets answered the click.
+  `click-highlight` now yields the legend click at admission.
 - Keyboard targeting now navigates and emits `focus-element` through the
   `keyboard-targeting` interaction ID without requiring a click preset. Enter
   and Space still invoke configured click presets when present.

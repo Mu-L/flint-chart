@@ -266,10 +266,13 @@ assembler wrote:
    Bar Chart has none.`
 2. A `navigate` that asks for an axis the chart does not navigate is refused by axis, because
    the capability alone cannot judge `axes: 'x'` against a chart that navigates y.
-3. Three conflict rules between pairs, unchanged by the capability model: one interaction per
-   gesture slot (navigation, region drag, element drag), because the runtime mounts one of each;
-   a pan cannot share the unmodified drag with a region preset; a double-click cannot both
-   activate a mark and reset another interaction. The later entry yields.
+3. One trigger, one owner. `triggersOf(definition)` reads the triggers a definition takes for
+   itself from its event source, its affordance keys, its state group, and its reset list: the
+   navigation, region drag, and element drag slots, the plot drag, the double-click, and the
+   legend, axis, and retained-focus mark clicks. For each trigger two definitions share, the one
+   that can give it up and keep the rest does so through `withoutAffordances` with an `info`
+   warning; otherwise the later entry yields whole, a spec entry always yields to a code
+   definition, and two code definitions throw.
 
 The origin decides the consequence. A spec entry is dropped with a `ChartWarning`,
 `unsupported_interaction` or `conflicting_interactions`, and the message ends with "The

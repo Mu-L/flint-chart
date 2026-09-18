@@ -219,6 +219,27 @@ describe('validateChart with interaction_spec', () => {
         );
     });
 
+    it('reports the triggers one entry yields to another as info, and keeps the chart valid', () => {
+        const coloured = {
+            ...barChart,
+            chart_spec: { ...barChart.chart_spec, encodings: { ...barChart.chart_spec.encodings, color: { field: 'region' } } },
+            interaction_spec: { interactions: [
+                { type: 'click-highlight' },
+                { type: 'hover-group-focus', options: { groupBy: 'region' } },
+                { type: 'axis-highlight' },
+                { type: 'legend-toggle' },
+                { type: 'drag-reorder' },
+            ] },
+        } as ChartAssemblyInput;
+        const result = validateChart(coloured, 'vegalite');
+        expect(result.valid).toBe(true);
+        expect(result.warnings.filter((warning) => warning.severity !== 'info')).toEqual([]);
+        expect(result.warnings.map((warning) => warning.message)).toEqual([
+            'Interaction "click-highlight" yields legend clicks to "legend-toggle".',
+            'Interaction "click-highlight" yields axis label clicks to "axis-highlight".',
+        ]);
+    });
+
     it('reports a malformed spec as an error', () => {
         const result = withInteractions([{ type: 'no-such-preset' }]);
         expect(result.valid).toBe(false);

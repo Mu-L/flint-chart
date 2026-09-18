@@ -5,6 +5,7 @@ import {
     type InteractionCapability,
 } from '../../core/interaction-spec';
 import type { CanvasInteractionDef } from '../interactions';
+import type { InteractionAffordanceTarget } from '../affordances';
 import type { NavigationAxes } from '../language/events';
 
 /** What admission reads from the compiled chart: the fields the assembler writes to `_interactionSemantics`. */
@@ -33,15 +34,72 @@ export function navigationAxesFor(
     return axes === 'xy' ? ['x', 'y'] : [axes];
 }
 
-const PAN_DRAG_CONFLICT = 'Pan navigation cannot share an unmodified drag gesture with a region interaction.';
-
-/** The gesture slots the runtime fills with one interaction each. */
-const GESTURE_SLOTS: readonly { label: string; holds: (interaction: CanvasInteractionDef) => boolean }[] = [
-    { label: 'navigation', holds: ({ eventSource }) => eventSource.type === 'navigation' },
-    { label: 'region drag', holds: ({ eventSource }) => eventSource.type === 'region' && eventSource.gesture === 'drag' },
-    { label: 'element drag', holds: ({ eventSource }) => eventSource.type === 'element' && eventSource.gesture === 'drag' },
-];
 const DROPPED = 'The interaction was dropped.';
+
+/** One gesture on one kind of hit: the unit two interactions can share. */
+export interface InteractionTrigger {
+    readonly id: string;
+    /** How a warning names it. */
+    readonly description: string;
+    /** The affordance key behind a hit trigger; an interaction can give it up and keep the rest. */
+    readonly key?: InteractionAffordanceTarget;
+}
+
+const NAVIGATION: InteractionTrigger = { id: 'navigation', description: 'the navigation slot' };
+const REGION_DRAG: InteractionTrigger = { id: 'region-drag', description: 'the region drag slot' };
+const ELEMENT_DRAG: InteractionTrigger = { id: 'element-drag', description: 'the element drag slot' };
+const PLOT_DRAG: InteractionTrigger = { id: 'drag:plot', description: 'the plot drag' };
+const DOUBLE_CLICK: InteractionTrigger = { id: 'double-click', description: 'the double-click' };
+const LEGEND_CLICK: InteractionTrigger = { id: 'click:legend-item', description: 'legend clicks', key: 'legend-item' };
+const AXIS_CLICK: InteractionTrigger = { id: 'click:axis-label', description: 'axis label clicks', key: 'axis-label' };
+
+/** The triggers an interaction takes for itself, read from its event source, affordances, state group, and reset list. */
+export function triggersOf(interaction: CanvasInteractionDef): readonly InteractionTrigger[] {
+    const { eventSource, affordances, reset, retainedStateGroup } = interaction;
+    const triggers: InteractionTrigger[] = [];
+    const drags = eventSource.gesture === 'drag';
+    if (eventSource.type === 'navigation') {
+        triggers.push(NAVIGATION);
+        if (eventSource.pan) triggers.push(PLOT_DRAG);
+    }
+    if (eventSource.type === 'region' && drags) triggers.push(REGION_DRAG, PLOT_DRAG);
+    if (eventSource.type === 'element' && drags) triggers.push(ELEMENT_DRAG, PLOT_DRAG);
+    if (eventSource.gesture === 'double' || reset?.includes('double-click')) triggers.push(DOUBLE_CLICK);
+    if (eventSource.gesture === 'click') {
+        if ('legend-item' in affordances) triggers.push(LEGEND_CLICK);
+        if ('axis-label' in affordances) triggers.push(AXIS_CLICK);
+        if (retainedStateGroup && 'mark' in affordances) {
+            triggers.push({
+                id: `${retainedStateGroup}:click:mark`,
+                description: `mark clicks with retained ${retainedStateGroup}`,
+                key: 'mark',
+            });
+        }
+    }
+    return triggers;
+}
+
+/** The first trigger two admitted interactions share, in list order. */
+function firstSharedTrigger(
+    interactions: readonly CanvasInteractionDef[],
+): { trigger: InteractionTrigger; earlier: CanvasInteractionDef; later: CanvasInteractionDef } | undefined {
+    for (const [index, earlier] of interactions.entries()) {
+        for (const trigger of triggersOf(earlier)) {
+            const later = interactions.slice(index + 1)
+                .find((candidate) => triggersOf(candidate).some((other) => other.id === trigger.id));
+            if (later) return { trigger, earlier, later };
+        }
+    }
+    return undefined;
+}
+
+/** A copy of `interaction` that no longer takes `trigger`, or undefined when it cannot give it up and keep the rest. */
+function without(interaction: CanvasInteractionDef, trigger: InteractionTrigger): CanvasInteractionDef | undefined {
+    if (!trigger.key || !interaction.withoutAffordances) return undefined;
+    const copy = interaction.withoutAffordances([trigger.key]);
+    if (!copy) return undefined;
+    return interaction.origin ? { ...copy, origin: interaction.origin } : copy;
+}
 
 /** A preset needs what the core table says; a definition made by hand needs nothing. */
 export function interactionRequirements(interaction: CanvasInteractionDef): readonly InteractionCapability[] {
@@ -54,7 +112,8 @@ export function interactionRequirements(interaction: CanvasInteractionDef): read
  * The answer depends on origin. A definition made in code throws, because a
  * developer sees the exception. An entry from `interaction_spec` is dropped and
  * reported as a `ChartWarning`, because an agent reads warnings and the chart
- * should still render. When two entries conflict, the one later in the list yields.
+ * should still render. When two entries share a trigger, the one that can give it up
+ * and keep the rest does so; otherwise the later entry yields whole.
  */
 export function admitInteractions(
     plan: InteractionAdmissionPlan,
@@ -93,63 +152,32 @@ export function admitInteractions(
         return true;
     });
 
-    // The runtime mounts one interaction per gesture slot. A later spec entry yields; in code the first wins.
-    for (const slot of GESTURE_SLOTS) {
-        let kept: CanvasInteractionDef | undefined;
-        admitted = admitted.filter((interaction) => {
-            if (!slot.holds(interaction)) return true;
-            if (!kept) {
-                kept = interaction;
-                return true;
-            }
-            if (interaction.origin !== 'spec') return true;
+    // One trigger, one owner. When exactly one of the two can give the trigger up and keep
+    // the rest, it does; otherwise the later entry yields whole, and a spec entry always
+    // yields to a code definition.
+    for (;;) {
+        const shared = firstSharedTrigger(admitted);
+        if (!shared) break;
+        const { trigger, earlier, later } = shared;
+        const narrowed = [earlier, later]
+            .map((interaction) => ({ interaction, copy: without(interaction, trigger) }))
+            .filter(({ copy }) => copy);
+        if (narrowed.length === 1) {
+            const { interaction, copy } = narrowed[0];
+            const owner = interaction === earlier ? later : earlier;
             warnings.push({
-                severity: 'warning',
+                severity: 'info',
                 code: 'conflicting_interactions',
-                message: `Interaction "${interaction.id}" is a second ${slot.label} interaction; the chart keeps "${kept.id}". ${DROPPED}`,
+                message: `Interaction "${interaction.id}" yields ${trigger.description} to "${owner.id}".`,
             });
-            return false;
-        });
-    }
-
-    // Pan and an unmodified drag gesture cannot share the plot.
-    for (;;) {
-        const pan = admitted.find((interaction) =>
-            interaction.eventSource.type === 'navigation' && interaction.eventSource.pan);
-        const drag = admitted.find((interaction) =>
-            interaction.eventSource.type !== 'navigation' && interaction.eventSource.gesture === 'drag');
-        if (!pan || !drag) break;
-        if (pan.origin !== 'spec' && drag.origin !== 'spec') throw new Error(PAN_DRAG_CONFLICT);
-        const later = admitted.indexOf(pan) > admitted.indexOf(drag) ? pan : drag;
-        const earlier = later === pan ? drag : pan;
-        const victim = later.origin === 'spec' ? later : earlier;
-        const kept = victim === pan ? drag : pan;
-        warnings.push({
-            severity: 'warning',
-            code: 'conflicting_interactions',
-            message: `Interaction "${victim.id}" conflicts with "${kept.id}": ${PAN_DRAG_CONFLICT.charAt(0).toLowerCase()}${PAN_DRAG_CONFLICT.slice(1)} ${DROPPED}`,
-        });
-        admitted = admitted.filter((interaction) => interaction !== victim);
-    }
-
-    // A double-click cannot both activate a mark and reset another interaction. Code definitions
-    // both fire; a spec entry yields, the later one first.
-    for (;;) {
-        const activate = admitted.find((interaction) => interaction.eventSource.gesture === 'double');
-        const reset = admitted.find((interaction) =>
-            interaction.eventSource.gesture !== 'double' && interaction.reset?.includes('double-click'));
-        if (!activate || !reset) break;
-        if (activate.origin !== 'spec' && reset.origin !== 'spec') break;
-        const later = admitted.indexOf(activate) > admitted.indexOf(reset) ? activate : reset;
-        const earlier = later === activate ? reset : activate;
-        const victim = later.origin === 'spec' ? later : earlier;
-        const kept = victim === activate ? reset : activate;
-        warnings.push({
-            severity: 'warning',
-            code: 'conflicting_interactions',
-            message: `Interaction "${victim.id}" conflicts with "${kept.id}": a double-click cannot both activate a mark and reset another interaction. ${DROPPED}`,
-        });
-        admitted = admitted.filter((interaction) => interaction !== victim);
+            admitted = admitted.map((candidate) => (candidate === interaction ? copy! : candidate));
+            continue;
+        }
+        const victim = later.origin === 'spec' || earlier.origin !== 'spec' ? later : earlier;
+        const kept = victim === later ? earlier : later;
+        reject(victim, 'conflicting_interactions',
+            `Interaction "${victim.id}" shares ${trigger.description} with "${kept.id}".`);
+        admitted = admitted.filter((candidate) => candidate !== victim);
     }
 
     return { admitted, warnings };

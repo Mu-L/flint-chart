@@ -90,7 +90,30 @@ An entry the chart cannot honour is **dropped with a warning**, and the chart st
 Interaction "legend-toggle" requires a discrete legend; Bar Chart has none. The interaction was dropped.
 ```
 
-Two entries can also conflict: a second `navigate`, a second region drag (`select`, `lasso-select`, the brushes, `linked-brush`, `brush-zoom`), a second `drag-reorder`, a pan gesture next to a drag gesture, or `double-activate` next to a `double-click` reset. The later entry yields.
+### When two interactions share a trigger
+
+A trigger is one gesture on one kind of hit: a click on a legend item, a drag on the plot, a double-click. Two entries can ask for the same trigger:
+
+| Trigger | Who asks for it |
+|---|---|
+| the navigation slot | every `navigate` |
+| the region drag slot | `select`, `lasso-select`, the brushes, `linked-brush`, `brush-zoom` |
+| the element drag slot | `drag-reorder` |
+| the plot drag | every region drag, `drag-reorder`, and `navigate` with pan on |
+| the double-click | `double-activate`, and any entry whose `reset` holds `double-click` |
+| legend clicks | `legend-toggle`, `click-highlight`, `inspect-index` with a series switch |
+| axis label clicks | `axis-highlight`, `click-highlight` |
+| mark clicks with retained focus | `click-highlight`, `click-group-focus` |
+
+One trigger has one owner. When exactly one of the two can give the trigger up and keep the rest, it does, and an `info` warning says so. Today only `click-highlight` can, one target at a time:
+
+```
+Interaction "click-highlight" yields legend clicks to "legend-toggle".
+```
+
+Otherwise the later entry yields whole and is dropped with a warning, and a spec entry always yields to a code definition. Two code definitions that share a trigger throw.
+
+Two options avoid a conflict before it happens. `click-highlight` takes `targets`, so `{ "type": "click-highlight", "options": { "targets": ["mark"] } }` never asks for the legend or the axis. `navigate` takes `reset`, so `reset: ["escape"]` lets `double-activate` keep the double-click.
 
 Where to read the warnings:
 

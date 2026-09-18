@@ -203,7 +203,7 @@ _interactionSemantics: {
 
 1. 对每个交互，其所需的每项能力必须在 `plan.capabilities` 中。第一个缺失的能力决定消息：`Interaction "legend-toggle" requires a discrete legend; Bar Chart has none.`
 2. 请求图表不能导航的轴的 `navigate` 按轴拒绝，因为仅凭能力无法判断 `axes: 'x'` 对一张只能导航 y 的图表。
-3. 三条成对冲突规则，不受能力模型影响：每个手势槽位（导航、区域拖动、元素拖动）一个交互，因为运行时各只挂载一个；平移不能与区域预设共用未加修饰的拖动；双击不能既激活标记又重置另一交互。后面的条目让步。
+3. 一个触发器，一个所有者。`triggersOf(definition)` 从事件源、affordance 键、状态组和重置列表读出一个定义占用的触发器：导航、区域拖动和元素拖动槽位，绘图区拖动，双击，以及图例、坐标轴和带保留焦点的标记点击。对每个被两个定义共用的触发器，能放弃它并保留其余部分的一方通过 `withoutAffordances` 放弃并附带 `info` 警告；否则后面的条目整体让步，spec 条目总是让步给代码定义，两个代码定义则抛出异常。
 
 来源决定后果。spec 条目以 `ChartWarning` 丢弃，代码为 `unsupported_interaction` 或 `conflicting_interactions`，消息以 “The interaction was dropped.” 结尾。代码定义以同一句子抛出异常。警告到达 `surface.warnings`、控制台（一次）、`validateChart()` 以及 MCP 的 `validate_chart`。
 
