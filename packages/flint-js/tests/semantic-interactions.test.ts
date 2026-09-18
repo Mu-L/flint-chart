@@ -888,6 +888,75 @@ describe('Vega-Lite semantic interactions', () => {
         view.finalize();
     });
 
+    it('tweens a Vega scale domain to its target and keeps the tween through a render', async () => {
+        const spec = assembleVegaLite({
+            chart_spec: {
+                chartType: 'Scatter Plot',
+                encodings: { x: { field: 'x' }, y: { field: 'y' } },
+            },
+            semantic_types: { x: 'Number', y: 'Number' },
+            data: { values: [{ x: 0, y: 0 }, { x: 100, y: 100 }] },
+        }) as any;
+        const plan = addVegaLiteInteractions(spec, [navigate()])!;
+        const compiled = compile(spec).spec as any;
+        const axes = injectVegaNavigationSignals(compiled, plan.navigationChannels);
+        const view = new View(parse(compiled), { renderer: 'none' });
+        await view.runAsync();
+        const initial = view.scale('x').domain().map(Number);
+        const controller = createVegaNavigationController(view, axes);
+        const guard = { minVisibleFraction: 0.02, maxVisibleFraction: 1, overscrollFraction: 0 };
+        const zoom = controller.resolve({
+            type: 'navigation', phase: 'commit', operation: 'zoom', axes: 'x',
+            factor: 4, anchor: { x: 0.25, y: 0.5 },
+        }, guard)!;
+
+        // The tween starts on the domain on screen; nothing lands before the first frame.
+        const phases: string[] = [];
+        expect(controller.apply(zoom, { transition: { duration: 60, onFrame: (phase) => phases.push(phase) } })).toBe(true);
+        await view.runAsync();
+        expect(view.scale('x').domain().map(Number)).toEqual(initial);
+        // The runtime's baseline reset and the re-applied target keep the tween.
+        expect(controller.apply({ op: 'set-viewport', axes: 'x', value: {} }, { baseline: true })).toBe(true);
+        expect(controller.apply(zoom)).toBe(true);
+        await view.runAsync();
+        expect(view.scale('x').domain().map(Number)).toEqual(initial);
+        await controller.settled!();
+        const landed = view.scale('x').domain().map(Number);
+        const target = zoom.value.x!.map(Number);
+        landed.forEach((value, index) => expect(value).toBeCloseTo(target[index], 6));
+        expect(phases.length).toBeGreaterThan(1);
+        expect(phases.slice(0, -1).every((phase) => phase === 'preview')).toBe(true);
+        expect(phases[phases.length - 1]).toBe('commit');
+
+        // A tween home reports as a reset, passes through the frames between, and lands on the initial domain.
+        const operations: string[] = [];
+        const spans: number[] = [];
+        controller.apply({ op: 'set-viewport', axes: 'x', value: {} }, {
+            transition: {
+                duration: 60,
+                onFrame: (_phase, operation) => {
+                    operations.push(operation);
+                    const [lo, hi] = view.scale('x').domain().map(Number);
+                    spans.push(hi - lo);
+                },
+            },
+        });
+        await controller.settled!();
+        expect(new Set(operations)).toEqual(new Set(['reset']));
+        expect(view.scale('x').domain().map(Number)).toEqual(initial);
+        expect(spans.some((span) => span > target[1] - target[0] && span < initial[1] - initial[0])).toBe(true);
+
+        // A plain viewport change cancels a running tween.
+        const cancelled: string[] = [];
+        controller.apply(zoom, { transition: { duration: 500, onFrame: (phase) => cancelled.push(phase) } });
+        controller.apply({ op: 'set-viewport', axes: 'x', value: {} });
+        await controller.settled!();
+        await view.runAsync();
+        expect(view.scale('x').domain().map(Number)).toEqual(initial);
+        expect(cancelled).not.toContain('commit');
+        view.finalize();
+    });
+
     it('declares proportional line focus and continuous-color region boundaries', () => {
         expect(lineChartDef.semanticInteractions!({
             resolvedEncodings: { x: { field: 'Year', type: 'ordinal' }, y: { field: 'Value', type: 'quantitative' } },

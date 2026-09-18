@@ -123,6 +123,8 @@ export interface CanvasInteractionDef {
     /** Retained updates from interactions in the same group replace one another. */
     readonly retainedStateGroup?: string;
     readonly navigationDomainGuard?: NavigationDomainGuard;
+    /** A viewport this interaction commits tweens into place over this duration. */
+    readonly navigationTransition?: NavigationTransition;
     /** A reset gesture on this interaction tweens home over this duration. */
     readonly navigationResetTransition?: NavigationTransition;
     handle?(event: CanvasInteractionEvent, context: InteractionContext): ChartUpdate | null;
@@ -266,8 +268,12 @@ export interface BrushZoomOptions {
     id?: string;
     axes?: 'x' | 'y' | 'xy';
     guide?: RegionGuideOptions | false;
-    /** Returns the viewport to the full frame. Defaults to ['double-click']. */
+    /** Returns the viewport to the full frame. Defaults to ['double-click', 'escape']. */
     reset?: readonly InteractionResetGesture[];
+    /** The zoom into the brushed region. Defaults to 400 ms; `{ duration: 0 }` jumps. */
+    transition?: NavigationTransition;
+    /** The flight home on reset. Defaults to 400 ms; `{ duration: 0 }` jumps. */
+    resetTransition?: NavigationTransition;
 }
 
 export interface LongPressOptions {
@@ -285,7 +291,7 @@ export interface DoubleActivateOptions {
     reset?: readonly InteractionResetGesture[];
 }
 
-/** How long a gesture-driven viewport change animates, in milliseconds. */
+/** How long a gesture-driven viewport change animates, in milliseconds; 0 turns the animation off. */
 export interface NavigationTransition {
     duration: number;
 }
@@ -299,6 +305,7 @@ export interface NavigateOptions {
     domainGuard?: Partial<NavigationDomainGuard>;
     /** Returns the viewport to the full frame. Defaults to ['double-click']. */
     reset?: readonly NavigationResetGesture[];
+    /** The flight home on reset. Defaults to 400 ms; `{ duration: 0 }` jumps. */
     resetTransition?: NavigationTransition;
 }
 

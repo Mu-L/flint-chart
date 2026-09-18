@@ -302,7 +302,10 @@ Each preset has a default list in the registry and a supported list; the resolve
 unsupported gesture and any `reset` on a preset that keeps nothing. One dispatcher per chart
 runs the gestures. A gesture resets only the interactions whose list holds it, each by its own
 id: retained updates are cleared, a stateful brush clears through its controller, `navigate`
-flies home through its own path, and a preset with closure state drops it through `onReset()`.
+and `brush-zoom` fly home through the navigation controller, and a preset with closure state
+drops it through `onReset()`. The flight home, like the zoom a brush commits, animates over
+400 ms by default; `resetTransition: { duration: 0 }` jumps. Panning and wheel zooming follow
+the pointer and never animate.
 
 A chart with an `escape` reset becomes focusable and takes focus on a pointer press, so Escape
 reaches the chart the reader touched last and no other. Host updates applied through the surface

@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Viewport changes a gesture commits animate by default. A `navigate` or
+  `brush-zoom` reset flies home, and a brush zoom tweens into the brushed
+  region, over 400 ms on every Vega-Lite chart, not only on projected maps.
+  `resetTransition: { duration: 0 }` (and `transition` on `brush-zoom`) jumps
+  instead. Panning and wheel zooming still follow the pointer.
 - `interaction_spec`, a third document beside `chart_spec` and `theme_spec`: a
   list of interaction presets by `type`, each with its `options`.
   `buildInteractiveChart()`, the MCP chart view, and the site editor mount from

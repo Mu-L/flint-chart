@@ -723,6 +723,7 @@ export function mountVegaInteractions(
     });
     const resetViewportRegion = (): void => {
         if (!regionInteraction?.eventSource.viewport) return;
+        if (flyViewportHome(regionInteraction)) return;
         retainedUpdates.delete(regionInteraction.id);
         previewUpdates.delete(regionInteraction.id);
         void renderUpdates();
@@ -1250,6 +1251,31 @@ export function mountVegaInteractions(
         return resolved.result;
     };
 
+    /** The axes of the viewport an interaction holds, or undefined when it holds none. */
+    const heldViewportAxes = (id: string): 'x' | 'y' | 'xy' | undefined => {
+        for (const layer of [retainedUpdates, previewUpdates]) {
+            const op = layer.get(id)?.ops.find((candidate) => candidate.op === 'set-viewport');
+            if (op?.op === 'set-viewport') return op.axes;
+        }
+        return undefined;
+    };
+    // A held viewport flies home the way a navigate reset does: the home
+    // update tweens, then leaves, so nothing stays retained once it lands.
+    const flyViewportHome = (interaction: CanvasInteractionDef): boolean => {
+        const transition = interaction.navigationResetTransition;
+        const axes = heldViewportAxes(interaction.id);
+        if (!transition || axes === undefined) return false;
+        previewUpdates.delete(interaction.id);
+        const home: ChartUpdate = { id: interaction.id, ops: [{ op: 'set-viewport', axes, value: {} }] };
+        void storeUpdate(home, retainedUpdates, null, { transition }).then(async () => {
+            const landed = retainedUpdates.get(interaction.id);
+            if (!landed?.ops.every((op) => op.op === 'set-viewport' && Object.keys(op.value).length === 0)) return;
+            retainedUpdates.delete(interaction.id);
+            await renderUpdates();
+        });
+        return true;
+    };
+
     const applyInteractionUpdate = async (
         interaction: CanvasInteractionDef,
         phase: import('../../interactive/interactions').InteractionPhase,
@@ -1363,7 +1389,11 @@ export function mountVegaInteractions(
         const request = applyHandler && interaction.handle
             ? interaction.handle(canvasEvent, context(!interaction.eventSource.viewport, interaction))
             : null;
-        await applyInteractionUpdate(interaction, event.phase, request, legendSelection);
+        // A committed viewport, a brush zoom, may tween into place.
+        const transition = event.phase === 'commit' && request && hasViewportOp(request)
+            ? interaction.navigationTransition
+            : undefined;
+        await applyInteractionUpdate(interaction, event.phase, request, legendSelection, transition ? { transition } : undefined);
     };
     let navigationDispatch = Promise.resolve();
     // Navigation frames queue behind the render they trigger. While one is in
@@ -1940,6 +1970,11 @@ export function mountVegaInteractions(
                     Object.keys(plan.navigationAxes ?? {}) as ('x' | 'y')[],
                 ),
             });
+            interaction.onReset?.();
+            return false;
+        }
+        if (flyViewportHome(interaction)) {
+            if (interaction === regionInteraction) regionGesture?.reset();
             interaction.onReset?.();
             return false;
         }

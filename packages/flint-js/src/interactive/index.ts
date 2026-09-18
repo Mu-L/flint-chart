@@ -74,6 +74,7 @@ export type {
     InspectIndexOptions,
     LassoSelectOptions,
     NavigateOptions,
+    NavigationTransition,
     NavigationAxes,
     NavigationDomainGuard,
     NavigationInteractionEvent,

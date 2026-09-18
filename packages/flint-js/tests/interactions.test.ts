@@ -3445,16 +3445,29 @@ describe('legend, inspect, zoom, and touch presets', () => {
 });
 
 describe('navigate reset transition', () => {
-    it('carries a reset transition onto the interaction and validates it', () => {
-        expect(navigate().navigationResetTransition).toBeUndefined();
+    it('flies home over 400 ms unless the option says otherwise, and validates it', () => {
+        expect(navigate().navigationResetTransition).toEqual({ duration: 400 });
         expect(navigate().eventSource.reset).toEqual(['double-click']);
         expect(navigate({ reset: ['click-none'] }).eventSource.reset).toEqual(['click-none']);
         expect(navigate({ reset: ['double-click', 'click-none'] }).eventSource.reset)
             .toEqual(['double-click', 'click-none']);
         expect(navigate({ reset: [] }).eventSource.reset).toEqual([]);
         expect(navigate({ resetTransition: { duration: 500 } }).navigationResetTransition).toEqual({ duration: 500 });
+        expect(navigate({ resetTransition: { duration: 0 } }).navigationResetTransition).toBeUndefined();
         expect(() => navigate({ resetTransition: { duration: -1 } })).toThrow(/resetTransition/);
         expect(() => navigate({ resetTransition: { duration: Number.NaN } })).toThrow(/resetTransition/);
+    });
+});
+
+describe('brush-zoom transitions', () => {
+    it('tweens the zoom and the flight home over 400 ms unless an option turns one off', () => {
+        expect(brushZoom().navigationTransition).toEqual({ duration: 400 });
+        expect(brushZoom().navigationResetTransition).toEqual({ duration: 400 });
+        expect(brushZoom({ transition: { duration: 0 } }).navigationTransition).toBeUndefined();
+        expect(brushZoom({ transition: { duration: 0 } }).navigationResetTransition).toEqual({ duration: 400 });
+        expect(brushZoom({ resetTransition: { duration: 250 } }).navigationResetTransition).toEqual({ duration: 250 });
+        expect(() => brushZoom({ transition: { duration: -1 } })).toThrow(/transition/);
+        expect(() => brushZoom({ resetTransition: { duration: Number.NaN } })).toThrow(/resetTransition/);
     });
 });
 
