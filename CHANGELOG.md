@@ -62,6 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A legend click with both `click-highlight` and `legend-toggle` mounted hid the
   series and dimmed every other bar, because both presets answered the click.
   `click-highlight` now yields the legend click at admission.
+- A click on a discrete axis label through `click-highlight` or
+  `axis-highlight` changed nothing on the chart. The renderer routed an axis
+  target to the label painter only and skipped the render keys of its marks.
+  The category's marks now emphasise and the rest mute, like a mark click.
 - Keyboard targeting now navigates and emits `focus-element` through the
   `keyboard-targeting` interaction ID without requiring a click preset. Enter
   and Space still invoke configured click presets when present.

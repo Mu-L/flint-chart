@@ -1042,6 +1042,8 @@ export function mountVegaInteractions(
                     }
                     for (const target of op.targets) {
                         if ('select' in target) continue;
+                        // An axis element styles its label, and its marks below, through the
+                        // render keys the axis resolver attached to it.
                         if (target.visual.kind === 'axis') {
                             for (const element of target.elements) {
                                 axisStyles.push({
@@ -1049,7 +1051,6 @@ export function mountVegaInteractions(
                                     style: op.value,
                                 });
                             }
-                            continue;
                         }
                         for (const element of target.elements) {
                             for (const key of semanticElementRenderKeys(element)) {
