@@ -34,6 +34,13 @@ export function navigationAxesFor(
 }
 
 const PAN_DRAG_CONFLICT = 'Pan navigation cannot share an unmodified drag gesture with a region interaction.';
+
+/** The gesture slots the runtime fills with one interaction each. */
+const GESTURE_SLOTS: readonly { label: string; holds: (interaction: CanvasInteractionDef) => boolean }[] = [
+    { label: 'navigation', holds: ({ eventSource }) => eventSource.type === 'navigation' },
+    { label: 'region drag', holds: ({ eventSource }) => eventSource.type === 'region' && eventSource.gesture === 'drag' },
+    { label: 'element drag', holds: ({ eventSource }) => eventSource.type === 'element' && eventSource.gesture === 'drag' },
+];
 const DROPPED = 'The interaction was dropped.';
 
 /** A preset needs what the core table says; a definition made by hand needs nothing. */
@@ -86,22 +93,24 @@ export function admitInteractions(
         return true;
     });
 
-    // A chart navigates through one interaction. A later spec entry yields; in code the first wins.
-    let navigation: CanvasInteractionDef | undefined;
-    admitted = admitted.filter((interaction) => {
-        if (interaction.eventSource.type !== 'navigation') return true;
-        if (!navigation) {
-            navigation = interaction;
-            return true;
-        }
-        if (interaction.origin !== 'spec') return true;
-        warnings.push({
-            severity: 'warning',
-            code: 'conflicting_interactions',
-            message: `Interaction "${interaction.id}" is a second navigation interaction; the chart keeps "${navigation.id}". ${DROPPED}`,
+    // The runtime mounts one interaction per gesture slot. A later spec entry yields; in code the first wins.
+    for (const slot of GESTURE_SLOTS) {
+        let kept: CanvasInteractionDef | undefined;
+        admitted = admitted.filter((interaction) => {
+            if (!slot.holds(interaction)) return true;
+            if (!kept) {
+                kept = interaction;
+                return true;
+            }
+            if (interaction.origin !== 'spec') return true;
+            warnings.push({
+                severity: 'warning',
+                code: 'conflicting_interactions',
+                message: `Interaction "${interaction.id}" is a second ${slot.label} interaction; the chart keeps "${kept.id}". ${DROPPED}`,
+            });
+            return false;
         });
-        return false;
-    });
+    }
 
     // Pan and an unmodified drag gesture cannot share the plot.
     for (;;) {

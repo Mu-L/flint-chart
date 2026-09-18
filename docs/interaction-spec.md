@@ -90,7 +90,7 @@ An entry the chart cannot honour is **dropped with a warning**, and the chart st
 Interaction "legend-toggle" requires a discrete legend; Bar Chart has none. The interaction was dropped.
 ```
 
-Two entries can also conflict: a second `navigate`, a pan gesture next to a drag gesture, or `double-activate` next to a `double-click` reset. The later entry yields.
+Two entries can also conflict: a second `navigate`, a second region drag (`select`, `lasso-select`, the brushes, `linked-brush`, `brush-zoom`), a second `drag-reorder`, a pan gesture next to a drag gesture, or `double-activate` next to a `double-click` reset. The later entry yields.
 
 Where to read the warnings:
 

@@ -90,7 +90,7 @@
 Interaction "legend-toggle" requires a discrete legend; Bar Chart has none. The interaction was dropped.
 ```
 
-两个条目也可能冲突：第二个 `navigate`、平移手势旁的拖动手势、或与 `double-click` 重置并存的 `double-activate`。后面的条目让步。
+两个条目也可能冲突：第二个 `navigate`、第二个区域拖动（`select`、`lasso-select`、各种 brush、`linked-brush`、`brush-zoom`）、第二个 `drag-reorder`、平移手势旁的拖动手势、或与 `double-click` 重置并存的 `double-activate`。后面的条目让步。
 
 在哪里读取警告：
 

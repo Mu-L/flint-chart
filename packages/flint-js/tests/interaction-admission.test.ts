@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { admitInteractions } from '../src/interactive/spec/admission';
 import { resolveInteractionSpec } from '../src/interactive/spec/resolve';
-import { brushAngle, brushX, clickHighlight, navigate, select } from '../src/interactive/interactions';
+import { brushAngle, brushX, brushY, clickHighlight, dragReorder, navigate, select } from '../src/interactive/interactions';
 import type { CanvasInteractionDef } from '../src/interactive/interactions';
 import type { InteractionEntry } from '../src/core/interaction-spec';
 import { addVegaLiteInteractions } from '../src/vegalite/interactions/compile';
@@ -76,6 +76,34 @@ describe('admitInteractions', () => {
         const code = admitInteractions(CARTESIAN, [navigate(), navigate({ id: 'again' })]);
         expect(ids(code.admitted)).toEqual(['navigate', 'again']);
         expect(code.warnings).toEqual([]);
+    });
+
+    it('keeps one region drag: a second spec brush yields, code keeps today\'s behaviour', () => {
+        const spec = admitInteractions(CARTESIAN, fromSpec([{ type: 'brush-x' }, { type: 'brush-y' }, { type: 'click-highlight' }]));
+        expect(ids(spec.admitted)).toEqual(['brush-x', 'click-highlight']);
+        expect(spec.warnings).toHaveLength(1);
+        expect(spec.warnings[0]).toMatchObject({ code: 'conflicting_interactions' });
+        expect(spec.warnings[0].message).toContain('"brush-y" is a second region drag interaction; the chart keeps "brush-x"');
+        const code = admitInteractions(CARTESIAN, [brushX(), brushY()]);
+        expect(ids(code.admitted)).toEqual(['brush-x', 'brush-y']);
+        expect(code.warnings).toEqual([]);
+    });
+
+    it('a spec region drag yields to a code region drag that comes later', () => {
+        const result = admitInteractions(CARTESIAN, [...fromSpec([{ type: 'select' }]), brushX()]);
+        expect(ids(result.admitted)).toEqual(['select', 'brush-x']);
+        const specLater = admitInteractions(CARTESIAN, [brushX(), ...fromSpec([{ type: 'select' }])]);
+        expect(ids(specLater.admitted)).toEqual(['brush-x']);
+        expect(specLater.warnings[0].message).toContain('"select" is a second region drag interaction; the chart keeps "brush-x"');
+    });
+
+    it('keeps one element drag: a second spec drag-reorder yields', () => {
+        const plan = { capabilities: ['elements', 'reorder'] as const };
+        const spec = admitInteractions(plan, fromSpec([{ type: 'drag-reorder' }, { type: 'drag-reorder', id: 'again' }]));
+        expect(ids(spec.admitted)).toEqual(['drag-reorder']);
+        expect(spec.warnings[0].message).toContain('"again" is a second element drag interaction; the chart keeps "drag-reorder"');
+        const code = admitInteractions(plan, [dragReorder(), dragReorder({ id: 'again' })]);
+        expect(ids(code.admitted)).toEqual(['drag-reorder', 'again']);
     });
 
     describe('pan versus drag', () => {
@@ -186,10 +214,15 @@ describe('admission against the chart type declaration', () => {
         ]);
     });
 
-    it('a pie keeps the brushes as angular gestures and the legend, and drops the axis presets', () => {
+    it('a pie keeps the first region drag and the legend, and drops the axis presets', () => {
         const result = admitInteractions(semanticsOf('Pie Chart', { theta: 'value', color: 'category' }), every);
-        expect(ids(result.admitted)).toEqual(['click-highlight', 'select', 'brush-x', 'brush-angle', 'legend-toggle']);
-        expect(result.warnings.map((warning) => warning.code)).toEqual(Array(4).fill('unsupported_interaction'));
+        expect(ids(result.admitted)).toEqual(['click-highlight', 'select', 'legend-toggle']);
+        expect(result.warnings.map((warning) => warning.code)).toEqual([
+            ...Array(4).fill('unsupported_interaction'),
+            ...Array(2).fill('conflicting_interactions'),
+        ]);
+        expect(result.warnings[4].message).toContain('"brush-x" is a second region drag interaction; the chart keeps "select"');
+        expect(result.warnings[5].message).toContain('"brush-angle" is a second region drag interaction; the chart keeps "select"');
     });
 
     it('a legend is confirmed by the data: a bar chart without a colour field drops legend-toggle', () => {
