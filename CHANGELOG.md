@@ -11,6 +11,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Viewport changes a gesture commits animate by default. A `navigate` or
+  `brush-zoom` reset flies home, and a brush zoom tweens into the brushed
+  region, over 400 ms on every Vega-Lite chart, not only on projected maps.
+  `resetTransition: { duration: 0 }` (and `transition` on `brush-zoom`) jumps
+  instead. Panning and wheel zooming still follow the pointer.
+- `interaction_spec`, a third document beside `chart_spec` and `theme_spec`: a
+  list of interaction presets by `type`, each with its `options`.
+  `buildInteractiveChart()`, the MCP chart view, and the site editor mount from
+  it. Guide: `docs/interaction-spec.md`.
+- Admission per chart type. Each Vega-Lite template declares its capabilities
+  in `ChartTemplateDef.interactionSupport`; each preset declares its needs in
+  `INTERACTION_PRESET_REQUIREMENTS`. A spec entry the chart cannot honour is
+  dropped with an `unsupported_interaction` warning; a code definition throws.
+  `validateChart()` and the MCP `validate_chart` report the same warnings;
+  `list_chart_types` and the Vega-Lite reference list the supported presets.
+  One trigger, one owner: `triggersOf(definition)` lists the triggers a
+  definition takes (the navigation, region drag, and element drag slots, the
+  plot drag, the double-click, and the legend, axis, and retained-focus mark
+  clicks); when two admitted definitions share one, the one that can give it
+  up and keep the rest does so with an `info` warning (`click-highlight`
+  through `withoutAffordances`), otherwise the later entry drops with a
+  `conflicting_interactions` warning, a spec entry always yields to code, and
+  two code definitions throw. Before, only three pairs were checked, and two
+  code definitions on one slot were kept with the runtime using the first.
+- Chart validation is now part of the core package. `validateChart(input,
+  backend)` returns `{ valid, warnings, errors, computedSize }` without
+  throwing, alongside `validateChartInput`, `validateSemanticTypes`,
+  `assembleForBackend`, and `stripPrivateKeys`, from `flint-chart` and the new
+  `flint-chart/validate` subpath. Hosts that let an agent author chart inputs
+  outside MCP get the same per-problem feedback the `validate_chart` tool
+  provides; `flint-chart-mcp` now consumes this implementation. Unregistered
+  `semantic_types` labels surface as `unknown_semantic_type` warnings, and
+  `isRegistered` / `getRegisteredTypes` are exported from `flint-chart/core`
+  ([#104](https://github.com/microsoft/flint-chart/issues/104)).
+
+### Changed
+
+- `CanvasInteractionDef.affordances` is now a required map from the kind of
+  hit (`mark`, `legend-item`, `axis-label`, `plot`) to its cursor and hover,
+  and it is the only dispatch gate: the runtime sends a hit to an interaction
+  only when the interaction affords its kind, on every path including
+  keyboard, context, long press, and double-click. The flags
+  `claimsLegendActivation` and `claimsAxisActivation` are gone; a key says the
+  same thing. `clickHighlight()` gains `withoutAffordances(drop)`, a copy that
+  affords fewer targets. A definition built by hand must declare
+  `affordances`; `affordsTarget(interaction, target)` reads the gate. A long
+  press, a right-click, or a double-click on a legend item no longer reaches a
+  preset that affords marks only.
+
+### Fixed
+
+- A legend click with both `click-highlight` and `legend-toggle` mounted hid the
+  series and dimmed every other bar, because both presets answered the click.
+  `click-highlight` now yields the legend click at admission.
+- A click on a discrete axis label through `click-highlight` or
+  `axis-highlight` changed nothing on the chart. The renderer routed an axis
+  target to the label painter only and skipped the render keys of its marks.
+  The category's marks now emphasise and the rest mute, like a mark click.
+- Keyboard targeting now navigates and emits `focus-element` through the
+  `keyboard-targeting` interaction ID without requiring a click preset. Enter
+  and Space still invoke configured click presets when present.
+- Independently retained `set-annotation` updates now render together by update
+  and semantic target identity; clearing one update leaves the others visible.
+- ECharts categorical legends (and their title graphics) are pinned with
+  `legend.right` instead of a design-canvas `left` pixel. Hosts that size the
+  container independently of `_width` and call `chart.resize()` keep the
+  reserved gutter instead of overlapping the plot or clipping the legend
+  ([#98](https://github.com/microsoft/flint-chart/issues/98)).
+- Visible units now require an explicit `unit` in the field's semantic
+  annotation. Conventional compact units may accompany values, while lexical
+  units such as `years` are stated once as part of the field title. Bar Tables
+  also no longer repeat their value column as annotations on the bars.
+- A raw sum-stacked chart whose total lands exactly on a clean axis tick now
+  keeps that edge flush instead of adding an empty interval above it, including
+  machine-scale residue from calculated shares. Totals meaningfully beyond the
+  clean endpoint still advance to the next tick; the rule is derived from the
+  plotted stack and does not special-case percentages or 100.
+- Series-end labels now use a bounded screen-space packing pass when endpoints
+  form one readable column. Small adjustments keep labels attached by proximity;
+  crowded or horizontally staggered sets fall back together to the next legend
+  placement instead of leaving a partial or overlapping direct-label system.
+
 ## [0.5.1] - 2026-08-13
 
 ### Added

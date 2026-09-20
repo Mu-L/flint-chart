@@ -6,6 +6,7 @@ import type { LabelSizingDecision } from './decisions';
 import type { SemanticAnnotation, FormatSpec, DomainConstraint, TickConstraint } from './field-semantics';
 import type { ColorDecisionResult } from './color-decisions';
 import type { GeometryKind, ThemeGeometry, ThemeSpec } from './theme/types';
+import type { ChartInteractionSupport, InteractionSpec } from './interaction-spec';
 
 /**
  * Core types for the chart engine library.
@@ -308,6 +309,20 @@ export interface ChannelBudgets {
     facetGrid?: FacetGridResult;
 }
 
+/** A scrollable window over an ordered positional category domain. */
+export interface CategoryViewport {
+    /** Positional channel controlled by this viewport. */
+    channel: 'x' | 'y';
+    /** Source field whose values define the category domain. */
+    field: string;
+    /** Complete display order, before the static fallback window is applied. */
+    orderedValues: any[];
+    /** Number of categories shown in an interactive window at the minimum valid step. */
+    visibleCount: number;
+    /** Total number of categories in the ordered domain. */
+    totalCount: number;
+}
+
 /** Result of overflow filtering. */
 export interface OverflowResult {
     /** Data after removing overflow rows */
@@ -318,6 +333,8 @@ export interface OverflowResult {
     truncations: TruncationWarning[];
     /** Warning messages for the UI */
     warnings: ChartWarning[];
+    /** Positional category windows that an interactive host can navigate. */
+    viewports: CategoryViewport[];
 }
 
 /**
@@ -886,6 +903,14 @@ export interface ChartTemplateDef {
     channels: string[];
 
     /**
+     * What this chart type offers to interaction presets: the marks that resolve
+     * to data, the drag regions, the navigable and reorderable axes, the legend,
+     * the discrete axis labels, the index axis. Absent means the chart type
+     * supports no interaction.
+     */
+    interactionSupport?: ChartInteractionSupport;
+
+    /**
      * How the primary mark encodes its quantitative value.
      * Determines zero-baseline, scale tightness, and compression behavior.
      *
@@ -896,6 +921,38 @@ export interface ChartTemplateDef {
      *   - Heatmap: 'color'
      */
     markCognitiveChannel: MarkCognitiveChannel;
+
+    /** Template-owned semantic resolution and chart-specific presentation. */
+    semanticInteractions?: (context: {
+        resolvedEncodings: Readonly<Record<string, any>>;
+    }) => {
+        fields: string[];
+        provenanceFields?: readonly string[];
+        temporalProvenanceFields?: readonly string[];
+        rangeProvenance?: readonly { field: string; startField: string; endField: string }[];
+        categoryField?: string;
+        seriesField?: string;
+        resolveGroupValue?: (element: import('./interaction-contracts').SemanticElement) => unknown;
+        reorderAxis?: { axis: 'x' | 'y'; field: string; includeConnectiveMarks?: boolean; markTypes?: readonly string[] };
+        reorderAxes?: readonly { axis: 'x' | 'y'; field: string; includeConnectiveMarks?: boolean; markTypes?: readonly string[] }[];
+        legendFields?: Record<string, string>;
+        selectableMarks: string[];
+        /** Backend marktype to anchor annotations to when one key matches several marks. */
+        annotationMarkType?: string;
+        renderHoverStyles?: Record<string, {
+            fill?: string;
+            fillOpacity?: number;
+            opacity?: 'contrast' | 'spotlight';
+            stroke?: string;
+            strokeWidth?: number;
+        }>;
+        renderSelectionStyles?: Record<string, {
+            strokeWidthMultiplier?: number;
+            boundary?: 'contiguous-region';
+        }>;
+        resolve: import('./interaction-contracts').ChartInteractionResolver;
+        presentUpdate: import('./interaction-contracts').ChartUpdatePresenter;
+    };
 
     /**
      * Phase 1a: Declare layout intent.
@@ -971,6 +1028,12 @@ export interface ChartTemplateDef {
      * templates may retain older internal/input spellings for compatibility.
      */
     ownsValueLabels?: boolean;
+
+    /**
+     * The template already presents values in a dedicated table column, so a
+     * generic label layer would repeat the same number on the data mark.
+     */
+    suppressValueLabels?: boolean;
 
     /**
      * Opt out of a backend's *generic* column/row facet-splitting pass, even
@@ -1151,6 +1214,22 @@ export interface ChartAssemblyInput {
      * accept the shared input field but do not apply it.
      */
     theme_spec?: ThemeSpec | string;
+
+    /**
+     * Interactions — describes *how it behaves*.
+     *
+     * Presets named by type with their options, each with its own reset
+     * gestures, and the targeting policies. Retained state is not part of it;
+     * a host applies that through the interactive surface.
+     * Sits beside `chart_spec` for the same reason `theme_spec`
+     * does: one behaviour applies to many charts, and a static backend ignores
+     * it without harm.
+     *
+     * Read by the interactive surface in `flint-chart/interactive` (Vega-Lite
+     * only). The assemblers leave it untouched. A preset the chart cannot
+     * honour is dropped with a warning rather than failing the chart.
+     */
+    interaction_spec?: InteractionSpec;
 
     /**
      * Options for the assembler — layout tuning, tooltips, etc.

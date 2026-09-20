@@ -43,6 +43,12 @@ export const DOCUMENTATION_GROUPS: DocGroup[] = [
         file: '../../../docs/theme-spec.md',
       },
       {
+        slug: 'interaction-spec',
+        title: 'Using interactions',
+        description: 'List interaction presets in interaction_spec, set their reset gestures, and read what each chart type supports.',
+        file: '../../../docs/interaction-spec.md',
+      },
+      {
         slug: 'setup-flint-mcp',
         title: 'Set up Flint MCP',
         description:
@@ -95,6 +101,12 @@ export const DOCUMENTATION_GROUPS: DocGroup[] = [
         file: '../../../docs/design-stretch-model.md',
       },
       {
+        slug: 'interaction-design',
+        title: 'Interaction Design',
+        description: 'Presets, the interaction spec, chart semantics, capabilities and admission, reset, and the mount pipeline.',
+        file: '../../../docs/design-interactions.md',
+      },
+      {
         slug: 'api-reference',
         title: 'API reference',
         description: 'ChartAssemblyInput, assemblers, encodings, options, and exports.',
@@ -135,6 +147,12 @@ export const DOCUMENTATION_GROUPS: DocGroup[] = [
         title: 'Excel charts',
         description: 'Every native Excel chart type, its channels, and Office.js mapping.',
         file: '../../../docs/reference-excel.md',
+      },
+      {
+        slug: 'community-backends',
+        title: 'Community backends',
+        description: 'Community-contributed renderers and delivery targets, their coverage, and integration notes.',
+        file: '../../../docs/community-backends.md',
       },
     ],
   },

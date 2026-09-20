@@ -53,6 +53,7 @@ import {
     InstantiateContext,
 } from '../core/types';
 import type { ChartWarning, ChartOption, OptionEvalContext } from '../core/types';
+import { declaredInteractionCapabilities, type InteractionCapability } from '../core/interaction-spec';
 import { applyEncodingOverrides } from '../core/encoding-overrides';
 import { applyAggregation } from '../core/aggregate';
 import { planBandDodge, resolveDodge } from '../core/band-dodge';
@@ -60,7 +61,7 @@ import { applyPivot, applyTransform, type PivotSurface, type TransformSurface } 
 import { vlGetTemplateDef } from './templates';
 import { inferVisCategory, computeZeroDecision } from '../core/semantic-types';
 import { resolveChannelSemantics, convertTemporalData } from '../core/resolve-semantics';
-import { toTypeString, type SemanticAnnotation } from '../core/field-semantics';
+import { resolveDisplayUnit, titleWithDisplayUnit, toTypeString, type SemanticAnnotation } from '../core/field-semantics';
 import { filterOverflow } from '../core/filter-overflow';
 import { computeLayout, computeChannelBudgets, computeMinSubplotDimensions, deriveStretchCaps, resolveBaseSize, resolveFacetColumnsOption } from '../core/compute-layout';
 import { vlApplyLayoutToSpec, vlApplyTooltips } from './instantiate-spec';
@@ -193,7 +194,7 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
     // Detect array-valued encodings (static series), validate, and fold data.
     const rawData = input.data.values ?? [];
     const normalized = normalizeStaticSeries(
-        input.chart_spec.encodings, rawData, semanticTypes,
+        input.chart_spec.encodings, rawData, semanticTypes, chartType,
     );
     let data = normalized.data;
     const staticSeries = normalized.staticSeries;
@@ -842,7 +843,9 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
         titled: Boolean(vgObj.title),
         headline: headlineText(vgObj.title),
         hostSurface: (input.options as any)?.background,
-        valueLabels: resolveValueLabelChoice(chartProperties),
+        valueLabels: chartTemplate.suppressValueLabels
+            ? 'off'
+            : resolveValueLabelChoice(chartProperties),
         geometryKinds: chartTemplate.geometryKinds,
     });
 
@@ -862,6 +865,10 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
     // ═══════════════════════════════════════════════════════════════════════
 
     const result: any = { ...vgObj, data: vgObj.data ?? { values } };
+    // Runtime detail levels and a pre-projected base map travel with the
+    // interaction semantics, not the spec.
+    delete result._geoLevels;
+    delete result._geoPreProjection;
     if (themeDecisions) {
         result._theme = {
             id: themeDecisions.themeId,
@@ -872,6 +879,110 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
     if (warnings.length > 0) {
         result._warnings = warnings;
     }
+    if (overflowResult.viewports.length > 0) {
+        result._viewports = overflowResult.viewports;
+    }
+    const unfaceted = !resolvedEncodings.column?.field && !resolvedEncodings.row?.field;
+    // A projected chart navigates its projection extent, so both axes move
+    // together and no continuous x/y encoding is required.
+    const support = chartTemplate.interactionSupport;
+    const geoNavigation = !!support?.navigation?.geo && unfaceted;
+    const navigationAxes: ('x' | 'y')[] = geoNavigation
+        ? ['x', 'y']
+        : support?.navigation && unfaceted
+            ? (support.navigation.axes ?? ['x', 'y']).filter((axis) => {
+                const encoding = resolvedEncodings[axis];
+                return !!encoding?.field && (encoding.type === 'quantitative' || encoding.type === 'temporal');
+            })
+            : [];
+    const templateSemantics = chartTemplate.semanticInteractions?.({ resolvedEncodings }) ?? {
+        fields: [],
+        provenanceFields: undefined,
+        temporalProvenanceFields: undefined,
+        rangeProvenance: undefined,
+        selectableMarks: [],
+        reorderAxis: undefined,
+        reorderAxes: undefined,
+    };
+    const semanticEncodings = Object.values(resolvedEncodings)
+        .filter((encoding: any) => typeof encoding?.field === 'string') as any[];
+    const hasAggregate = semanticEncodings.some((encoding) => encoding.aggregate);
+    const provenanceFields = [...new Set(semanticEncodings
+        .filter((encoding) => !hasAggregate || !encoding.aggregate)
+        .map((encoding) => encoding.field as string))];
+    const temporalProvenanceFields = [...new Set(semanticEncodings
+        .filter((encoding) => encoding.type === 'temporal')
+        .map((encoding) => encoding.field as string))];
+    const reorderSupport = support?.reorder;
+    const allowedReorderAxes: readonly ('x' | 'y')[] = reorderSupport
+        ? reorderSupport.axes ?? ['x', 'y']
+        : [];
+    const defaultReorderAxes = allowedReorderAxes.length > 0
+        && !resolvedEncodings.column?.field && !resolvedEncodings.row?.field
+        ? (['x', 'y'] as const).flatMap((axis) => {
+            const encoding = resolvedEncodings[axis];
+            return allowedReorderAxes.includes(axis)
+                && encoding?.field && (encoding.type === 'nominal' || encoding.type === 'ordinal')
+                ? [{
+                    axis,
+                    field: encoding.field,
+                    ...(reorderSupport?.includeConnectiveMarks ? { includeConnectiveMarks: true } : {}),
+                    ...(reorderSupport?.markTypes ? { markTypes: reorderSupport.markTypes } : {}),
+                }]
+                : [];
+        })
+        : [];
+    const explicitReorderAxes = templateSemantics.reorderAxes
+        ?? (templateSemantics.reorderAxis ? [templateSemantics.reorderAxis] : []);
+    const legendFields = 'legendFields' in templateSemantics ? templateSemantics.legendFields : undefined;
+    const rangeLegendChannels = Object.keys(legendFields ?? {})
+        .filter((channel) => {
+            const type = resolvedEncodings[channel]?.type;
+            return type === 'quantitative' || type === 'temporal';
+        });
+    const reorderAxes = [...explicitReorderAxes, ...defaultReorderAxes]
+        .filter((candidate, index, candidates) => candidates.findIndex(
+            (axis) => axis.axis === candidate.axis && axis.field === candidate.field,
+        ) === index);
+    const discreteLegend = Object.keys(legendFields ?? {})
+        .some((channel) => !rangeLegendChannels.includes(channel));
+    const discreteAxis = (['x', 'y'] as const).some((axis) => {
+        const encoding = resolvedEncodings[axis];
+        return !!encoding?.field && (encoding.type === 'nominal' || encoding.type === 'ordinal');
+    });
+    const confirmed: Partial<Record<InteractionCapability, boolean>> = {
+        navigation: navigationAxes.length > 0,
+        reorder: reorderAxes.length > 0,
+        legend: discreteLegend,
+        'discrete-axis': discreteAxis,
+        index: !!resolvedEncodings.x?.field,
+    };
+    const capabilities = declaredInteractionCapabilities(support)
+        .filter((capability) => confirmed[capability] ?? true);
+    result._interactionSemantics = {
+        ...templateSemantics,
+        chartType: chartTemplate.chart,
+        capabilities,
+        axisFields: Object.fromEntries((['x', 'y'] as const).flatMap((axis) => {
+            const encoding = resolvedEncodings[axis];
+            return encoding?.field
+                ? [[axis, { field: encoding.field, type: encoding.type ?? 'nominal' }]]
+                : [];
+        })),
+        sourceRecords: values.map((record) => ({ ...record })),
+        provenanceFields: templateSemantics.provenanceFields ?? provenanceFields,
+        temporalProvenanceFields: templateSemantics.temporalProvenanceFields ?? temporalProvenanceFields,
+        rangeLegendChannels,
+        navigationAxes,
+        geoNavigation,
+        ...(vgObj._geoLevels ? { geoLevels: vgObj._geoLevels } : {}),
+        ...(vgObj._geoPreProjection ? { geoPreProjection: vgObj._geoPreProjection } : {}),
+        reorderAxis: reorderAxes[0],
+        reorderAxes,
+        selectionBoundary: design.interaction.selectionBoundary,
+        continuousColorFocus: design.interaction.continuousColorFocus,
+        neutralizeContinuousColor: chartTemplate.chart === 'Map' || chartTemplate.chart === 'Choropleth',
+    };
     result._width = layoutResult.subplotWidth;
     result._height = layoutResult.subplotHeight;
     // Annotated option catalog: every configurable property this template
@@ -916,8 +1027,8 @@ export function assembleVegaLite(input: ChartAssemblyInput): any {
     // whose template already writes its own text. Templates that print labels
     // *on request* are the exception: they answer to the toggle themselves.
     const designCoupledApplicability: Record<string, boolean> = {
-        showValueLabels: ownsLabels
-            || (design?.dataLabels?.possible === true && !templateDrawsOwnText),
+        showValueLabels: !chartTemplate.suppressValueLabels && (ownsLabels
+            || (design?.dataLabels?.possible === true && !templateDrawsOwnText)),
         // The older spelling stays an accepted *input* for compatibility, but a
         // host should be shown one switch, not two that fight.
         showTextLabels: false,
@@ -1310,6 +1421,17 @@ function buildVLEncodings(
         // Apply localized display name as axis/legend title
         if (fieldDisplayNames && fieldName && fieldDisplayNames[fieldName] && !encodingObj.title) {
             encodingObj.title = fieldDisplayNames[fieldName];
+        }
+
+        // A lexical unit explicitly declared by the author belongs once with
+        // the field name, independent of whether a visual theme is applied.
+        const displayUnit = resolveDisplayUnit(cs?.semanticAnnotation);
+        if ((channel === 'x' || channel === 'y') && cs?.type === 'quantitative'
+            && displayUnit?.placement === 'field' && encodingObj.title !== null) {
+            const currentTitle = typeof encodingObj.title === 'string'
+                ? encodingObj.title
+                : fieldName;
+            if (currentTitle) encodingObj.title = titleWithDisplayUnit(currentTitle, displayUnit);
         }
 
         // --- Collect resolved encoding ---
