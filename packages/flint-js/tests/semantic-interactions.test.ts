@@ -921,7 +921,7 @@ describe('Vega-Lite semantic interactions', () => {
         await view.runAsync();
         expect(view.scale('x').domain().map(Number)).toEqual(initial);
         await controller.settled!();
-        const landed = view.scale('x').domain().map(Number);
+        const landed: number[] = view.scale('x').domain().map(Number);
         const target = zoom.value.x!.map(Number);
         landed.forEach((value, index) => expect(value).toBeCloseTo(target[index], 6));
         expect(phases.length).toBeGreaterThan(1);
