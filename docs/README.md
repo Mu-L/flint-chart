@@ -9,7 +9,8 @@
 > For the semantic type system, see
 > [design-semantics.md](design-semantics.md). For the axis layout
 > compression models, see
-> [design-stretch-model.md](design-stretch-model.md).
+> [design-stretch-model.md](design-stretch-model.md). For the interaction
+> model, see [design-interactions.md](design-interactions.md).
 
 ---
 
@@ -699,6 +700,8 @@ channels. This decouples user/AI intent from rendering specifics.
 First-class channel for grouped bar charts. The analysis stage resolves
 its semantics (type, color scheme) without any VL knowledge. The grouping
 axis is auto-detected: whichever of `x`/`y` is discrete gets subdivided.
+For a Grouped Bar Chart, `color` is an equivalent alias for `group`; when only
+`color` is supplied, Flint canonicalizes it to `group` before analysis.
 
 During instantiation, `buildVLEncodings()` translates:
 - `group` → VL `color` encoding (for coloring)

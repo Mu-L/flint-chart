@@ -116,6 +116,8 @@ interface ChartAssemblyInput {
     chartProperties?: Record<string, unknown>;
   };
   options?: AssembleOptions;
+  theme_spec?: ThemeSpec | string;                     // 呈现，仅 Vega-Lite
+  interaction_spec?: InteractionSpec;                  // 行为，仅 Vega-Lite 交互层
   field_display_names?: Record<string, string>;
 }
 ```
@@ -130,6 +132,20 @@ interface ChartAssemblyInput {
 ### `semantic_types`
 
 将列名映射到语义类型。这驱动编码类型、格式化、聚合默认值、颜色类与布局。见[语义类型](/documentation/semantic-types)。
+
+### `interaction_spec`
+
+图表的行为。按 `type` 列出交互预设，每项带自己的 `options`，另有 `assistedTargeting` 与 `keyboardTargeting` 两个交互层策略：
+
+```ts
+interface InteractionSpec {
+  interactions: { type: InteractionPresetType; id?: string; options?: Record<string, any> }[];
+  assistedTargeting?: boolean | AssistedTargetingOptions;
+  keyboardTargeting?: boolean;
+}
+```
+
+`buildInteractiveChart()` 读取它，装配器忽略它。图表类型无法支持的条目会以 `unsupported_interaction` 警告被丢弃；`validateChart` 在渲染前报告同样的警告。`supportedInteractionPresets(def.interactionSupport)` 列出模板按声明支持的预设。参见[使用交互](/documentation/interaction-spec)。
 
 ### `chart_spec`
 
@@ -174,7 +190,7 @@ interface AssembleOptions {
   maxStretchX?: number;        // per-dimension width cap (derived from canvasSize)
   maxStretchY?: number;        // per-dimension height cap (derived from canvasSize)
   facetElasticity?: number;    // facet stretch (default 0.3)
-  minStep?: number;            // min px per discrete item (default 6)
+  minStep?: number;            // min px per discrete item (default 8)
   minSubplotSize?: number;     // min facet subplot px (default 60)
   maxColorValues?: number;     // color cardinality before truncation (default 24)
   stepPadding?: number;        // band inner padding fraction (default 0.1)
@@ -255,6 +271,35 @@ vlGetTemplateChannels('Scatter Plot');
 
 关键类型：`ChartAssemblyInput`、`ChartEncoding`、`ChartTemplateDef`、`AssembleOptions`、`ChartWarning`、`ChannelSemantics`。
 
+## 校验
+
+让 Agent 编写 `ChartAssemblyInput` 的宿主可以在渲染前先校验输入。`validateChart`
+不会抛出异常；它会返回 assembler 产生的全部警告，并在输入无法编译时（未知图表类型、
+不支持的通道、不存在的字段、画布上限）返回一条 `assembly_failed` 错误。
+从 `flint-chart` 与 `flint-chart/validate` 再导出：
+
+```ts
+import { validateChart } from 'flint-chart/validate';
+
+const result = validateChart(input, 'vegalite');
+// { backend, chartType, valid, warnings, errors, computedSize? }
+if (!result.valid) {
+  // 将 result.errors 反馈给 Agent
+}
+```
+
+| 符号 | 用途 |
+|--------|---------|
+| `validateChart(input, backend, options?)` | 校验并装配；不抛出异常 |
+| `validateChartInput(input, backend?, options?)` | 仅做结构检查；遇到第一个问题即抛出 |
+| `validateSemanticTypes(semantic_types)` | 对未在类型注册表中的标签返回 `unknown_semantic_type` 警告（`validateChart` 也会包含这些警告） |
+| `assembleForBackend(backend, input, options?)` | 装配并拆出 `_warnings` / `_width` / `_height` |
+| `stripPrivateKeys(spec)` | 从 spec 中移除 Flint 的 `_` 前缀元数据 |
+| `VALIDATION_BACKENDS` | 运行时可用的 backend 列表（`vegalite`、`echarts`、`chartjs`、`plotly`） |
+
+`options.maxDataRows`（默认 100,000）与 `options.maxCanvasDim`（默认 4000）限制输入
+大小。要求内联的 `data.values` —— 请在校验前先把 `data.url` 解析为行数据。
+
 ---
 
 # §8 溢出与警告
@@ -288,6 +333,7 @@ vlGetTemplateChannels('Scatter Plot');
 | `flint-chart/vegalite` | VL 模板与 `assembleVegaLite` |
 | `flint-chart/echarts` | ECharts 模板与 `assembleECharts` |
 | `flint-chart/chartjs` | Chart.js 模板与 `assembleChartjs` |
+| `flint-chart/validate` | `validateChart` 与输入校验辅助函数 |
 | `flint-chart/test-data` | 图库生成器（`TEST_GENERATORS`） |
 
 ---
