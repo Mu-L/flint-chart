@@ -19,7 +19,8 @@ import {
   getSupportedBackends,
   type PreviewBackend,
 } from '../shared/supported-backends';
-import { GITHUB_REPO, siteTheme } from '../shared/theme';
+import { GITHUB_REPO, LANDING_SCROLL_TO_KEY, WECHAT_SECTION_ID, siteTheme } from '../shared/theme';
+import { scrollToHeading } from '../shared/scroll-to-heading';
 import flintLogo from '../assets/flint-logo.svg';
 import wechatQr from '../../../docs/figs/QR-code.png';
 
@@ -31,6 +32,21 @@ import wechatQr from '../../../docs/figs/QR-code.png';
 export function Landing() {
   const { t } = useTranslation();
   const features = useMemo(() => getFeatures(t), [t]);
+
+  useEffect(() => {
+    let pending: string | null = null;
+    try {
+      pending = sessionStorage.getItem(LANDING_SCROLL_TO_KEY);
+      if (pending) sessionStorage.removeItem(LANDING_SCROLL_TO_KEY);
+    } catch {
+      // Privacy modes may block storage.
+    }
+    if (pending !== WECHAT_SECTION_ID) return;
+    const timer = window.setTimeout(() => {
+      scrollToHeading(WECHAT_SECTION_ID);
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div style={pageStyle}>
@@ -334,7 +350,10 @@ export function Landing() {
         </section>
 
         {/* ---- WeChat community -------------------------------------- */}
-        <section style={{ ...sectionStyle, paddingTop: 20, paddingBottom: 72, textAlign: 'center' }}>
+        <section
+          id={WECHAT_SECTION_ID}
+          style={{ ...sectionStyle, paddingTop: 20, paddingBottom: 72, textAlign: 'center' }}
+        >
           <h2 style={{ fontSize: 22, margin: '0 0 10px', fontWeight: 500 }}>
             {t('landing.wechatTitle')}
           </h2>

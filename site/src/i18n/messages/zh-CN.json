@@ -14,6 +14,10 @@
     "githubAriaStars": "GitHub 仓库，{{count}} 星",
     "githubTitle": "在 GitHub 上查看",
     "githubTitleStars": "在 GitHub 上查看（{{count}} 星）",
+    "wechatAria": "微信社群",
+    "wechatTitle": "加入微信群",
+    "discordAria": "Discord 社群",
+    "discordTitle": "加入 Discord",
     "langEn": "EN",
     "langZh": "中文",
     "langSwitchAria": "切换语言"
